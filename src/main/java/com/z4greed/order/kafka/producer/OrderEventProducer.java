@@ -20,10 +20,11 @@ public class OrderEventProducer {
 
   public void publish(String topic, EventEnvelopeDto event) {
     try {
-      String eventJson = objectMapper.writeValueAsString(event);
+      String eventJson = this.objectMapper.writeValueAsString(event);
       this.kafkaTemplate.send(topic, event.aggregateId(), eventJson);
     } catch (Exception exception) {
       throw new GreedException(ErrorCodeEnum.EVENT_PUBLISH_FAILED, exception);
     }
   }
+
 }

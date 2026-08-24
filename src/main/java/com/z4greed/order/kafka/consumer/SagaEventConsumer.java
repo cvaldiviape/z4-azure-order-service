@@ -21,4 +21,5 @@ public class SagaEventConsumer {
   public void payment(String rawEvent) {
     this.orderSagaService.handlePaymentEvent(rawEvent);
   }
+
 }

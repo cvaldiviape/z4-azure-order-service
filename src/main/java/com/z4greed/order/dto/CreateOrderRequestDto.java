@@ -7,4 +7,5 @@ import lombok.Builder;
 
 @Builder
 public record CreateOrderRequestDto(
-    @NotEmpty List<@Valid ItemRequestDto> listItems, @NotBlank String paymentToken) {}
+    @NotEmpty List<@Valid ItemRequestDto> listItems,
+    @NotBlank String paymentToken) {}

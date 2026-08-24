@@ -7,7 +7,10 @@ import lombok.*;
 @Entity
 @Table(name = "order_items")
 @Getter
+@Setter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderItemEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,19 +25,4 @@ public class OrderItemEntity {
   private BigDecimal unitPrice;
   private int quantity;
   private BigDecimal subtotal;
-
-  @Builder
-  public OrderItemEntity(
-      OrderEntity orderEntity,
-      Long productId,
-      String productName,
-      BigDecimal unitPrice,
-      int quantity) {
-    this.order = orderEntity;
-    this.productId = productId;
-    this.productName = productName;
-    this.unitPrice = unitPrice;
-    this.quantity = quantity;
-    this.subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
-  }
 }

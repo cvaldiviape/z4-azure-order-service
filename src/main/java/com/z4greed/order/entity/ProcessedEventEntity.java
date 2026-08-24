@@ -1,7 +1,7 @@
 package com.z4greed.order.entity;
 
 import jakarta.persistence.*;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
@@ -14,5 +14,5 @@ import lombok.*;
 public class ProcessedEventEntity {
   @Id private String eventId;
   private String eventType;
-  private Instant processedAt;
+  private LocalDateTime processedAt;
 }

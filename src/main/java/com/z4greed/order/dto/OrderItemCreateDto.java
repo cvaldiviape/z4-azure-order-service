@@ -10,5 +10,5 @@ public record OrderItemCreateDto(
     Long productId,
     String productName,
     BigDecimal unitPrice,
-    int quantity,
+    Integer quantity,
     BigDecimal subtotal) {}

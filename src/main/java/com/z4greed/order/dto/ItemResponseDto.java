@@ -8,5 +8,5 @@ public record ItemResponseDto(
     Long productId,
     String productName,
     BigDecimal unitPrice,
-    int quantity,
+    Integer quantity,
     BigDecimal subtotal) {}

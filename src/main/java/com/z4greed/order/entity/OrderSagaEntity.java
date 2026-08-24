@@ -2,11 +2,11 @@ package com.z4greed.order.entity;
 
 import com.z4greed.order.enums.SagaStatusEnum;
 import jakarta.persistence.*;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
-@Table(name = "order_saga")
+@Table(name = "order_sagas")
 @Getter
 @Setter
 @Builder
@@ -27,6 +27,6 @@ public class OrderSagaEntity {
   private String currentStep;
   private String lastEventId;
   private String errorMessage;
-  private Instant createdAt;
-  private Instant updatedAt;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 }

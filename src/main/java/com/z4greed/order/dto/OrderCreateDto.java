@@ -2,7 +2,7 @@ package com.z4greed.order.dto;
 
 import com.z4greed.order.enums.OrderStatusEnum;
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import lombok.Builder;
 
 @Builder
@@ -13,4 +13,4 @@ public record OrderCreateDto(
     String currency,
     String correlationId,
     String paymentToken,
-    Instant createdAt) {}
+    LocalDateTime createdAt) {}

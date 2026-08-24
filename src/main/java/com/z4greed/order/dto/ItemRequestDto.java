@@ -9,4 +9,4 @@ public record ItemRequestDto(
     @NotNull Long productId,
     @NotBlank String productName,
     @DecimalMin("0.01") BigDecimal unitPrice,
-    @Min(1) int quantity) {}
+    @Min(1) Integer quantity) {}

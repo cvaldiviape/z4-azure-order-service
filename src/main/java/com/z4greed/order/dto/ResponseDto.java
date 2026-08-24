@@ -5,6 +5,6 @@ import lombok.Builder;
 @Builder
 public record ResponseDto<T>(
     String code,
-    int statusCode,
+    Integer statusCode,
     String message,
     T data) {}

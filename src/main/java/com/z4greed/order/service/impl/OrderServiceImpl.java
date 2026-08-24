@@ -11,7 +11,7 @@ import com.z4greed.order.mapper.OrderMapper;
 import com.z4greed.order.repository.*;
 import com.z4greed.order.service.OrderService;
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,7 +55,7 @@ public class OrderServiceImpl implements OrderService {
         .currency("PEN")
         .correlationId("purchase-" + UUID.randomUUID())
         .paymentToken(requestDto.paymentToken())
-        .createdAt(Instant.now())
+        .createdAt(LocalDateTime.now())
         .build();
     OrderEntity orderEntity = this.orderMapper.toEntity(orderCreateDto);
     List<OrderItemEntity> listItemEntities = this.createItems(requestDto.listItems(), orderEntity);
@@ -96,7 +96,7 @@ public class OrderServiceImpl implements OrderService {
         .order(orderEntity)
         .status(SagaStatusEnum.STARTED)
         .currentStep(EventTypeEnum.ORDER_CREATED.getValue())
-        .createdAt(Instant.now())
+        .createdAt(LocalDateTime.now())
         .build();
     OrderSagaEntity orderSagaEntity = this.orderMapper.toSagaEntity(orderSagaCreateDto);
     this.sagaRepository.save(orderSagaEntity);
@@ -123,7 +123,7 @@ public class OrderServiceImpl implements OrderService {
         .aggregateId(orderEntity.getId().toString())
         .correlationId(orderEntity.getCorrelationId())
         .causationId(causationId)
-        .timestamp(Instant.now())
+        .timestamp(LocalDateTime.now())
         .producer("order-service")
         .payload(this.objectMapper.valueToTree(payload))
         .build();

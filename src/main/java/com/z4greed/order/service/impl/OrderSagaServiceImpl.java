@@ -11,7 +11,7 @@ import com.z4greed.order.mapper.ProcessedEventMapper;
 import com.z4greed.order.repository.*;
 import com.z4greed.order.service.OrderSagaService;
 import com.z4greed.order.service.OrderService;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Consumer;
 import org.springframework.stereotype.Service;
@@ -79,7 +79,7 @@ public class OrderSagaServiceImpl implements OrderSagaService {
     }
   }
 
-  private boolean wasProcessed(EventEnvelopeDto eventEnvelopeDto) {
+  private Boolean wasProcessed(EventEnvelopeDto eventEnvelopeDto) {
     return this.processedEventRepository.existsById(eventEnvelopeDto.eventId());
   }
 
@@ -158,7 +158,7 @@ public class OrderSagaServiceImpl implements OrderSagaService {
   }
 
   private void updateSaga(SagaContextDto contextDto, OrderStatusEnum orderStatus, SagaStatusEnum sagaStatus, EventTypeEnum eventType, String errorMessage) {
-    Instant updatedAt = Instant.now();
+    LocalDateTime updatedAt = LocalDateTime.now();
     if (orderStatus != null) {
       contextDto.orderEntity().setStatus(orderStatus);
       contextDto.orderEntity().setUpdatedAt(updatedAt);

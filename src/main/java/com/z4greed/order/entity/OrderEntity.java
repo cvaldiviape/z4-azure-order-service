@@ -3,7 +3,7 @@ package com.z4greed.order.entity;
 import com.z4greed.order.enums.OrderStatusEnum;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
@@ -29,8 +29,8 @@ public class OrderEntity {
   private String currency;
   private String correlationId;
   private String paymentToken;
-  private Instant createdAt;
-  private Instant updatedAt;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 
   @Builder.Default
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)

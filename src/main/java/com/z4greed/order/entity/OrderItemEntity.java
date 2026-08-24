@@ -23,6 +23,6 @@ public class OrderItemEntity {
   private Long productId;
   private String productName;
   private BigDecimal unitPrice;
-  private int quantity;
+  private Integer quantity;
   private BigDecimal subtotal;
 }

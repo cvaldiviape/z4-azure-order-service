@@ -20,8 +20,7 @@ public class OrderController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public ResponseDto<OrderResponseDto> create(
-      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateOrderRequestDto requestDto) {
+  public ResponseDto<OrderResponseDto> create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateOrderRequestDto requestDto) {
     Long customerId = Long.valueOf(jwt.getSubject());
     OrderResponseDto orderResponseDto = this.orderService.create(customerId, requestDto);
     return ResponseDto.<OrderResponseDto>builder()
@@ -33,8 +32,7 @@ public class OrderController {
   }
 
   @GetMapping("/{id}")
-  public ResponseDto<OrderResponseDto> get(
-      @AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+  public ResponseDto<OrderResponseDto> get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
     Long customerId = Long.valueOf(jwt.getSubject());
     OrderResponseDto orderResponseDto = this.orderService.get(id, customerId);
     return ResponseDto.<OrderResponseDto>builder()

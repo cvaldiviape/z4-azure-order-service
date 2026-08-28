@@ -1,11 +1,10 @@
 package com.z4greed.order.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.z4greed.order.dto.*;
 import com.z4greed.order.entity.*;
 import com.z4greed.order.enums.*;
 import com.z4greed.order.exception.GreedException;
+import com.z4greed.order.factory.OrderEventFactory;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
 import com.z4greed.order.kafka.producer.OrderEventProducer;
 import com.z4greed.order.mapper.OrderMapper;
@@ -25,20 +24,20 @@ public class OrderServiceImpl implements OrderService {
   private final SagaRepository sagaRepository;
   private final OrderEventProducer orderEventProducer;
   private final OrderMapper orderMapper;
-  private final ObjectMapper mapper;
+  private final OrderEventFactory orderEventFactory;
 
   public OrderServiceImpl(
       OrderRepository orderRepository,
       SagaRepository sagaRepository,
       OrderEventProducer orderEventProducer,
       OrderMapper orderMapper,
-      ObjectMapper mapper
+      OrderEventFactory orderEventFactory
   ) {
     this.orderRepository = orderRepository;
     this.sagaRepository = sagaRepository;
     this.orderEventProducer = orderEventProducer;
     this.orderMapper = orderMapper;
-    this.mapper = mapper;
+    this.orderEventFactory = orderEventFactory;
   }
 
   @Override
@@ -121,10 +120,8 @@ public class OrderServiceImpl implements OrderService {
   }
 
   private void publishOrderCreated(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
-    String eventType = EventTypeEnum.ORDER_CREATED.getValue();
-
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
-    EventEnvelopeDto eventEnvelopeDto = this.buildEvent(eventType, orderEntity, null, mapPayload);
+    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity,null, mapPayload);
 
     this.orderEventProducer.publish("orders.events", eventEnvelopeDto);
   }
@@ -139,26 +136,6 @@ public class OrderServiceImpl implements OrderService {
           "paymentToken", orderEntity.getPaymentToken(),
           "items", listItems
       );
-  }
-
-  @Override
-  public EventEnvelopeDto buildEvent(String eventType, OrderEntity orderEntity, String causationId, Object payload) {
-    String eventId = UUID.randomUUID().toString();
-    String orderId = orderEntity.getId().toString();
-    String correlationId = orderEntity.getCorrelationId();
-    JsonNode payloadNode = this.mapper.valueToTree(payload);
-
-    return EventEnvelopeDto.builder()
-        .eventId(eventId)
-        .eventType(eventType)
-        .eventVersion(1)
-        .aggregateId(orderId)
-        .correlationId(correlationId)
-        .causationId(causationId)
-        .timestamp(LocalDateTime.now())
-        .producer("order-service")
-        .payload(payloadNode)
-        .build();
   }
 
   @Override

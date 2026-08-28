@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -115,7 +114,7 @@ public class OrderSagaServiceImpl implements OrderSagaService {
 
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity);
 
-    EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(eventYpe, orderEntity, causationId, mapPayload);
+    EventEnvelopeDto eventEnvelopeDto = this.orderService.buildEvent(eventYpe, orderEntity, causationId, mapPayload);
 
     this.orderEventProducer.publish("payments.events", eventEnvelopeDto);
   }
@@ -138,7 +137,8 @@ public class OrderSagaServiceImpl implements OrderSagaService {
   private void publishOrderEvent(SagaContextDto contextDto, EventTypeEnum eventType, Map<String, Object> mapPayload) {
     OrderEntity orderEntity = contextDto.orderEntity();
     String causationId = contextDto.sourceEvent().eventId();
-    EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(eventType.getValue(), orderEntity, causationId, mapPayload);
+
+    EventEnvelopeDto eventEnvelopeDto = this.orderService.buildEvent(eventType.getValue(), orderEntity, causationId, mapPayload);
 
     this.orderEventProducer.publish("orders.events", eventEnvelopeDto);
   }
@@ -150,11 +150,14 @@ public class OrderSagaServiceImpl implements OrderSagaService {
 
   private void releaseStock(SagaContextDto contextDto) {
     this.updateSaga(contextDto, null, SagaStatusEnum.COMPENSATING, EventTypeEnum.PAYMENT_FAILED, null);
+
+    String eventType = EventTypeEnum.RELEASE_STOCK.getValue();
     OrderEntity orderEntity = contextDto.orderEntity();
     String causationId = contextDto.sourceEvent().eventId();
     Map<String, Object> mapPayload = Map.of();
-    EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(
-            EventTypeEnum.RELEASE_STOCK.getValue(), orderEntity, causationId, mapPayload);
+
+    EventEnvelopeDto eventEnvelopeDto = this.orderService.buildEvent(eventType, orderEntity, causationId, mapPayload);
+
     this.orderEventProducer.publish("inventory.events", eventEnvelopeDto);
   }
 

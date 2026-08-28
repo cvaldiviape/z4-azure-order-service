@@ -124,7 +124,7 @@ public class OrderServiceImpl implements OrderService {
     String eventType = EventTypeEnum.ORDER_CREATED.getValue();
 
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
-    EventEnvelopeDto eventEnvelopeDto = this.createEvent(eventType, orderEntity, null, mapPayload);
+    EventEnvelopeDto eventEnvelopeDto = this.buildEvent(eventType, orderEntity, null, mapPayload);
 
     this.orderEventProducer.publish("orders.events", eventEnvelopeDto);
   }
@@ -142,7 +142,7 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public EventEnvelopeDto createEvent(String eventType, OrderEntity orderEntity, String causationId, Object payload) {
+  public EventEnvelopeDto buildEvent(String eventType, OrderEntity orderEntity, String causationId, Object payload) {
     String eventId = UUID.randomUUID().toString();
     String orderId = orderEntity.getId().toString();
     String correlationId = orderEntity.getCorrelationId();

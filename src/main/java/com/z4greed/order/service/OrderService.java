@@ -8,5 +8,5 @@ import com.z4greed.order.kafka.event.EventEnvelopeDto;
 public interface OrderService {
   OrderResponseDto create(Long customerId, CreateOrderRequestDto requestDto);
   OrderResponseDto get(Long orderId, Long customerId);
-  EventEnvelopeDto createEvent(String eventType, OrderEntity orderEntity, String causationId, Object payload);
+  EventEnvelopeDto buildEvent(String eventType, OrderEntity orderEntity, String causationId, Object payload);
 }

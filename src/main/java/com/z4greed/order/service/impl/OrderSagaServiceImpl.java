@@ -108,13 +108,13 @@ public class OrderSagaServiceImpl implements OrderSagaService {
   private void requestPayment(SagaContextDto contextDto) {
     this.updateSaga(contextDto, OrderStatusEnum.PAYMENT_PENDING, SagaStatusEnum.IN_PROGRESS, EventTypeEnum.STOCK_RESERVED, null);
 
-    String eventYpe = EventTypeEnum.PAYMENT_REQUESTED.getValue();
+    String eventType = EventTypeEnum.PAYMENT_REQUESTED.getValue();
     OrderEntity orderEntity = contextDto.orderEntity();
     String causationId = contextDto.sourceEvent().eventId();
 
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity);
 
-    EventEnvelopeDto eventEnvelopeDto = this.orderService.buildEvent(eventYpe, orderEntity, causationId, mapPayload);
+    EventEnvelopeDto eventEnvelopeDto = this.orderService.buildEvent(eventType, orderEntity, causationId, mapPayload);
 
     this.orderEventProducer.publish("payments.events", eventEnvelopeDto);
   }

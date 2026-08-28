@@ -16,4 +16,5 @@ public class GreedException extends RuntimeException {
     super(errorCode.getMessage(), cause);
     this.errorCode = errorCode;
   }
+
 }

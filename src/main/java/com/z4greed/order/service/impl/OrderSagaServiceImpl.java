@@ -14,6 +14,8 @@ import com.z4greed.order.service.OrderService;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +28,7 @@ public class OrderSagaServiceImpl implements OrderSagaService {
   private final OrderEventProducer orderEventProducer;
   private final OrderService orderService;
   private final ProcessedEventMapper processedEventMapper;
-  private final ObjectMapper objectMapper;
+  private final ObjectMapper mapper;
 
   public OrderSagaServiceImpl(
       OrderRepository orderRepository,
@@ -35,14 +37,15 @@ public class OrderSagaServiceImpl implements OrderSagaService {
       OrderEventProducer orderEventProducer,
       OrderService orderService,
       ProcessedEventMapper processedEventMapper,
-      ObjectMapper objectMapper) {
+      ObjectMapper mapper
+  ) {
     this.orderRepository = orderRepository;
     this.sagaRepository = sagaRepository;
     this.processedEventRepository = processedEventRepository;
     this.orderEventProducer = orderEventProducer;
     this.orderService = orderService;
     this.processedEventMapper = processedEventMapper;
-    this.objectMapper = objectMapper;
+    this.mapper = mapper;
   }
 
   @Override
@@ -57,23 +60,27 @@ public class OrderSagaServiceImpl implements OrderSagaService {
 
   private void handleEvent(String rawEvent) {
     EventEnvelopeDto eventEnvelopeDto = this.readEvent(rawEvent);
-    if (this.wasProcessed(eventEnvelopeDto)) {
+    Boolean wasProcessed = this.wasProcessed(eventEnvelopeDto);
+
+    if (wasProcessed) {
       return;
     }
 
     Consumer<SagaContextDto> eventHandler = this.findEventHandler(eventEnvelopeDto);
+
     if (eventHandler == null) {
       return;
     }
 
     SagaContextDto sagaContextDto = this.loadSagaContext(eventEnvelopeDto);
     eventHandler.accept(sagaContextDto);
+
     this.markAsProcessed(eventEnvelopeDto);
   }
 
   private EventEnvelopeDto readEvent(String rawEvent) {
     try {
-      return this.objectMapper.readValue(rawEvent, EventEnvelopeDto.class);
+      return this.mapper.readValue(rawEvent, EventEnvelopeDto.class);
     } catch (Exception exception) {
       throw new GreedException(ErrorCodeEnum.INVALID_EVENT, exception);
     }
@@ -89,46 +96,55 @@ public class OrderSagaServiceImpl implements OrderSagaService {
         EventTypeEnum.STOCK_NOT_AVAILABLE, contextDto -> this.cancelOrder(contextDto, "Stock not available"),
         EventTypeEnum.STOCK_RELEASED, contextDto -> this.cancelOrder(contextDto, "Payment failed"),
         EventTypeEnum.PAYMENT_APPROVED, this::confirmOrder,
-        EventTypeEnum.PAYMENT_FAILED, this::releaseStock);
-    return EventTypeEnum.fromValue(eventEnvelopeDto.eventType())
+        EventTypeEnum.PAYMENT_FAILED, this::releaseStock
+    );
+
+    String eventType = eventEnvelopeDto.eventType();
+
+    return EventTypeEnum.fromValue(eventType)
         .map(mapEventHandlers::get)
         .orElse(null);
   }
 
-  private SagaContextDto loadSagaContext(EventEnvelopeDto eventEnvelopeDto) {
-    Long orderId = Long.valueOf(eventEnvelopeDto.aggregateId());
-    OrderEntity orderEntity = this.orderRepository.findById(orderId).orElseThrow();
-    OrderSagaEntity orderSagaEntity = this.sagaRepository.findByOrderId(orderId).orElseThrow();
-    return SagaContextDto.builder()
-        .orderEntity(orderEntity)
-        .orderSagaEntity(orderSagaEntity)
-        .sourceEvent(eventEnvelopeDto)
-        .build();
-  }
-
-  private void markAsProcessed(EventEnvelopeDto eventEnvelopeDto) {
-    ProcessedEventEntity processedEventEntity = this.processedEventMapper.toEntity(eventEnvelopeDto);
-    this.processedEventRepository.save(processedEventEntity);
-  }
-
   private void requestPayment(SagaContextDto contextDto) {
-    this.updateSaga(contextDto, OrderStatusEnum.PAYMENT_PENDING, SagaStatusEnum.IN_PROGRESS,
-        EventTypeEnum.STOCK_RESERVED, null);
+    this.updateSaga(contextDto, OrderStatusEnum.PAYMENT_PENDING, SagaStatusEnum.IN_PROGRESS, EventTypeEnum.STOCK_RESERVED, null);
+
+    String eventYpe = EventTypeEnum.PAYMENT_REQUESTED.getValue();
     OrderEntity orderEntity = contextDto.orderEntity();
     String causationId = contextDto.sourceEvent().eventId();
-    Map<String, Object> mapPayload = Map.of(
-        "customerId", orderEntity.getCustomerId(),
-        "amount", orderEntity.getTotalAmount(),
-        "currency", orderEntity.getCurrency(),
-        "paymentToken", orderEntity.getPaymentToken());
-    EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(
-        EventTypeEnum.PAYMENT_REQUESTED.getValue(), orderEntity, causationId, mapPayload);
+
+    Map<String, Object> mapPayload = this.buildMapPayload(orderEntity);
+
+    EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(eventYpe, orderEntity, causationId, mapPayload);
+
     this.orderEventProducer.publish("payments.events", eventEnvelopeDto);
   }
 
+  private Map<String, Object> buildMapPayload(OrderEntity orderEntity) {
+    return Map.of(
+            "customerId", orderEntity.getCustomerId(),
+            "amount", orderEntity.getTotalAmount(),
+            "currency", orderEntity.getCurrency(),
+            "paymentToken", orderEntity.getPaymentToken()
+    );
+  }
+
+  private void cancelOrder(SagaContextDto contextDto, String reason) {
+    this.updateSaga(contextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED, EventTypeEnum.ORDER_CANCELLED, reason);
+    Map<String, Object> mapPayload = Map.of("reason", reason);
+    this.publishOrderEvent(contextDto, EventTypeEnum.ORDER_CANCELLED, mapPayload);
+  }
+
+  private void publishOrderEvent(SagaContextDto contextDto, EventTypeEnum eventType, Map<String, Object> mapPayload) {
+    OrderEntity orderEntity = contextDto.orderEntity();
+    String causationId = contextDto.sourceEvent().eventId();
+    EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(eventType.getValue(), orderEntity, causationId, mapPayload);
+
+    this.orderEventProducer.publish("orders.events", eventEnvelopeDto);
+  }
+
   private void confirmOrder(SagaContextDto contextDto) {
-    this.updateSaga(contextDto, OrderStatusEnum.CONFIRMED, SagaStatusEnum.COMPLETED,
-        EventTypeEnum.PAYMENT_APPROVED, null);
+    this.updateSaga(contextDto, OrderStatusEnum.CONFIRMED, SagaStatusEnum.COMPLETED, EventTypeEnum.PAYMENT_APPROVED, null);
     this.publishOrderEvent(contextDto, EventTypeEnum.ORDER_CONFIRMED, Map.of());
   }
 
@@ -138,36 +154,43 @@ public class OrderSagaServiceImpl implements OrderSagaService {
     String causationId = contextDto.sourceEvent().eventId();
     Map<String, Object> mapPayload = Map.of();
     EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(
-        EventTypeEnum.RELEASE_STOCK.getValue(), orderEntity, causationId, mapPayload);
+            EventTypeEnum.RELEASE_STOCK.getValue(), orderEntity, causationId, mapPayload);
     this.orderEventProducer.publish("inventory.events", eventEnvelopeDto);
-  }
-
-  private void cancelOrder(SagaContextDto contextDto, String reason) {
-    this.updateSaga(contextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED,
-        EventTypeEnum.ORDER_CANCELLED, reason);
-    Map<String, Object> mapPayload = Map.of("reason", reason);
-    this.publishOrderEvent(contextDto, EventTypeEnum.ORDER_CANCELLED, mapPayload);
-  }
-
-  private void publishOrderEvent(SagaContextDto contextDto, EventTypeEnum eventType, Map<String, Object> mapPayload) {
-    OrderEntity orderEntity = contextDto.orderEntity();
-    String causationId = contextDto.sourceEvent().eventId();
-    EventEnvelopeDto eventEnvelopeDto = this.orderService.createEvent(
-        eventType.getValue(), orderEntity, causationId, mapPayload);
-    this.orderEventProducer.publish("orders.events", eventEnvelopeDto);
   }
 
   private void updateSaga(SagaContextDto contextDto, OrderStatusEnum orderStatus, SagaStatusEnum sagaStatus, EventTypeEnum eventType, String errorMessage) {
     LocalDateTime updatedAt = LocalDateTime.now();
+
     if (orderStatus != null) {
-      contextDto.orderEntity().setStatus(orderStatus);
-      contextDto.orderEntity().setUpdatedAt(updatedAt);
+      OrderEntity orderEntity = contextDto.orderEntity();
+      orderEntity.setStatus(orderStatus);
+      orderEntity.setUpdatedAt(updatedAt);
     }
-    contextDto.orderSagaEntity().setStatus(sagaStatus);
-    contextDto.orderSagaEntity().setCurrentStep(eventType.getValue());
-    contextDto.orderSagaEntity().setLastEventId(contextDto.sourceEvent().eventId());
-    contextDto.orderSagaEntity().setErrorMessage(errorMessage);
-    contextDto.orderSagaEntity().setUpdatedAt(updatedAt);
+
+    OrderSagaEntity orderSagaEntity = contextDto.orderSagaEntity();
+    orderSagaEntity.setStatus(sagaStatus);
+    orderSagaEntity.setCurrentStep(eventType.getValue());
+    orderSagaEntity.setLastEventId(contextDto.sourceEvent().eventId());
+    orderSagaEntity.setErrorMessage(errorMessage);
+    orderSagaEntity.setUpdatedAt(updatedAt);
+  }
+
+  private SagaContextDto loadSagaContext(EventEnvelopeDto eventEnvelopeDto) {
+    Long orderId = Long.valueOf(eventEnvelopeDto.aggregateId());
+    OrderEntity orderEntity = this.orderRepository.findById(orderId).orElseThrow();
+    OrderSagaEntity orderSagaEntity = this.sagaRepository.findByOrderId(orderId).orElseThrow();
+
+    return SagaContextDto.builder()
+        .orderEntity(orderEntity)
+        .orderSagaEntity(orderSagaEntity)
+        .sourceEvent(eventEnvelopeDto)
+        .build();
+  }
+
+  private void markAsProcessed(EventEnvelopeDto eventEnvelopeDto) {
+    ProcessedEventEntity processedEventEntity = this.processedEventMapper.toEntity(eventEnvelopeDto);
+
+    this.processedEventRepository.save(processedEventEntity);
   }
 
 }

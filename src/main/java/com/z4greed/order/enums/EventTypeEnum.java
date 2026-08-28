@@ -22,6 +22,14 @@ public enum EventTypeEnum {
   private final String value;
 
   public static Optional<EventTypeEnum> fromValue(String value) {
-    return Arrays.stream(values()).filter(eventTypeEnum -> eventTypeEnum.value.equals(value)).findFirst();
+    EventTypeEnum[] listEnumValues = values();
+
+    return Arrays.stream(listEnumValues)
+            .filter(eventTypeEnum -> {
+              String valueEvent = eventTypeEnum.value;
+              return valueEvent.equals(value);
+            })
+            .findFirst();
   }
+
 }

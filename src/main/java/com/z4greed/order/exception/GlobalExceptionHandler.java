@@ -20,4 +20,5 @@ public class GlobalExceptionHandler {
             .build();
     return ResponseEntity.status(errorCode.getHttpStatus()).body(responseDto);
   }
+
 }

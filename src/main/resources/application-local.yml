@@ -1,5 +1,5 @@
 spring:
   datasource:
     url: ${ORDERS_DB_URL:jdbc:postgresql://localhost:5434/orders_db}
-    username: ${ORDERS_DB_USERNAME:postgres}
-    password: ${ORDERS_DB_PASSWORD:saksah}
+    username: ${ORDERS_DB_USERNAME:ecommerce}
+    password: ${ORDERS_DB_PASSWORD:ecommerce}

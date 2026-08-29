@@ -1,7 +1,7 @@
 package com.z4greed.order.kafka.factory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;

@@ -1,6 +1,6 @@
 package com.z4greed.order.kafka.producer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.z4greed.order.enums.ErrorCodeEnum;
 import com.z4greed.order.exception.GreedException;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;

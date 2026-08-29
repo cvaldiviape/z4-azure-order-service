@@ -1,6 +1,6 @@
 package com.z4greed.order.service.saga.purchase.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.entity.PurchaseSagaEntity;

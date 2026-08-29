@@ -8,8 +8,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:local}
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: validate
   kafka:
-
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}  # Dirección del broker. La variable permite sobrescribir localhost en otros entornos.
     consumer:
       group-id: purchase-saga-consumer-group-id # Grupo suscriptor de la Saga de compra para inventory-events-topic y payments-events-topic.

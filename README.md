@@ -13,6 +13,8 @@ Servicio responsable de crear pedidos y orquestar la Saga de compra.
 
 `localhost:5434` corresponde al puerto publicado por `orders-postgres`. Dentro del contenedor PostgreSQL continúa utilizando `5432`.
 
+Flyway crea y modifica el esquema mediante `db/migration`. Hibernate utiliza `ddl-auto: validate` únicamente para comprobar que las entidades coincidan con las tablas; no crea ni altera la estructura.
+
 ## Kafka
 
 Produce eventos en:

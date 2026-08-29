@@ -123,7 +123,7 @@ public class OrderServiceImpl implements OrderService {
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity,null, mapPayload);
 
-    this.orderEventProducer.publish("orders.events", eventEnvelopeDto);
+    this.orderEventProducer.publish("orders-events-topic", eventEnvelopeDto);
   }
 
   private Map<String, Object> buildMapPayload(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {

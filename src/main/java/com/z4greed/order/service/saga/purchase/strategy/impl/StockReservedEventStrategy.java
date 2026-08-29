@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StockReservedEventStrategy implements PurchaseSagaEventStrategy {
-  private static final String PAYMENTS_TOPIC = "payments.events";
+  private static final String PAYMENTS_TOPIC = "payments-events-topic";
 
   private final PurchaseSagaStateManager purchaseSagaStateManager;
   private final OrderEventFactory orderEventFactory;

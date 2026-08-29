@@ -1,15 +1,15 @@
-package com.z4greed.order.service.impl;
+package com.z4greed.order.service.order.impl;
 
 import com.z4greed.order.dto.*;
 import com.z4greed.order.entity.*;
 import com.z4greed.order.enums.*;
 import com.z4greed.order.exception.GreedException;
-import com.z4greed.order.factory.OrderEventFactory;
+import com.z4greed.order.kafka.factory.OrderEventFactory;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
 import com.z4greed.order.kafka.producer.OrderEventProducer;
 import com.z4greed.order.mapper.OrderMapper;
 import com.z4greed.order.repository.*;
-import com.z4greed.order.service.OrderService;
+import com.z4greed.order.service.order.OrderService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -21,20 +21,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class OrderServiceImpl implements OrderService {
   private final OrderRepository orderRepository;
-  private final SagaRepository sagaRepository;
+  private final PurchaseSagaRepository purchaseSagaRepository;
   private final OrderEventProducer orderEventProducer;
   private final OrderMapper orderMapper;
   private final OrderEventFactory orderEventFactory;
 
   public OrderServiceImpl(
       OrderRepository orderRepository,
-      SagaRepository sagaRepository,
+      PurchaseSagaRepository purchaseSagaRepository,
       OrderEventProducer orderEventProducer,
       OrderMapper orderMapper,
       OrderEventFactory orderEventFactory
   ) {
     this.orderRepository = orderRepository;
-    this.sagaRepository = sagaRepository;
+    this.purchaseSagaRepository = purchaseSagaRepository;
     this.orderEventProducer = orderEventProducer;
     this.orderMapper = orderMapper;
     this.orderEventFactory = orderEventFactory;
@@ -43,7 +43,7 @@ public class OrderServiceImpl implements OrderService {
   @Override
   public OrderResponseDto create(Long customerId, CreateOrderRequestDto requestDto) {
     OrderEntity orderEntity = this.createOrder(customerId, requestDto);
-    this.createSaga(orderEntity);
+    this.createPurchaseSaga(orderEntity);
     this.publishOrderCreated(orderEntity, requestDto);
     return this.orderMapper.toDto(orderEntity);
   }
@@ -106,17 +106,17 @@ public class OrderServiceImpl implements OrderService {
     return unitPrice.multiply(BigDecimal.valueOf(quantity));
   }
 
-  private void createSaga(OrderEntity orderEntity) {
-    OrderSagaCreateDto orderSagaCreateDto = OrderSagaCreateDto.builder()
+  private void createPurchaseSaga(OrderEntity orderEntity) {
+    PurchaseSagaCreateDto purchaseSagaCreateDto = PurchaseSagaCreateDto.builder()
         .order(orderEntity)
         .status(SagaStatusEnum.STARTED)
         .currentStep(EventTypeEnum.ORDER_CREATED.getValue())
         .createdAt(LocalDateTime.now())
         .build();
 
-    OrderSagaEntity orderSagaEntity = this.orderMapper.toSagaEntity(orderSagaCreateDto);
+    PurchaseSagaEntity purchaseSagaEntity = this.orderMapper.toPurchaseSagaEntity(purchaseSagaCreateDto);
 
-    this.sagaRepository.save(orderSagaEntity);
+    this.purchaseSagaRepository.save(purchaseSagaEntity);
   }
 
   private void publishOrderCreated(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {

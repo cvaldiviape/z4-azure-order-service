@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 
 @Builder
-public record OrderSagaCreateDto(
+public record PurchaseSagaCreateDto(
     OrderEntity order,
     SagaStatusEnum status,
     String currentStep,

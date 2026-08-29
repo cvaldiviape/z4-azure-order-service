@@ -1,4 +1,4 @@
-package com.z4greed.order.strategy;
+package com.z4greed.order.service.saga.purchase.strategy;
 
 import com.z4greed.order.enums.EventTypeEnum;
 import java.util.EnumMap;
@@ -7,10 +7,10 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
-public class OrderSagaEventStrategyRegistry {
-  private final Map<EventTypeEnum, OrderSagaEventStrategy> mapEventStrategies;
+public class PurchaseSagaEventStrategyRegistry {
+  private final Map<EventTypeEnum, PurchaseSagaEventStrategy> mapEventStrategies;
 
-  public OrderSagaEventStrategyRegistry(List<OrderSagaEventStrategy> listEventStrategies) { // Spring inyecta en esta lista todos los beans que implementan OrderSagaEventStrategy.
+  public PurchaseSagaEventStrategyRegistry(List<PurchaseSagaEventStrategy> listEventStrategies) { // Spring inyecta todos los beans que implementan PurchaseSagaEventStrategy.
     this.mapEventStrategies = new EnumMap<>(EventTypeEnum.class);
 
     // Cada estrategia se registra por su tipo de evento para localizarla sin condicionales.
@@ -20,7 +20,7 @@ public class OrderSagaEventStrategyRegistry {
     });
   }
 
-  public OrderSagaEventStrategy find(EventTypeEnum eventTypeEnum) {
+  public PurchaseSagaEventStrategy find(EventTypeEnum eventTypeEnum) {
     return this.mapEventStrategies.get(eventTypeEnum);
   }
 

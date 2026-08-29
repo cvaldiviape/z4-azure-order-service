@@ -16,9 +16,9 @@ public interface OrderMapper {
   @Mapping(target = "id", ignore = true)
   OrderItemEntity toItemEntity(OrderItemCreateDto dto);
 
-  @Named("OrderMapper.toSagaEntity")
+  @Named("OrderMapper.toPurchaseSagaEntity")
   @Mapping(target = "id", ignore = true)
-  OrderSagaEntity toSagaEntity(OrderSagaCreateDto dto);
+  PurchaseSagaEntity toPurchaseSagaEntity(PurchaseSagaCreateDto dto);
 
   @Named("OrderMapper.toItemDto")
   ItemResponseDto toItemDto(OrderItemEntity entity);

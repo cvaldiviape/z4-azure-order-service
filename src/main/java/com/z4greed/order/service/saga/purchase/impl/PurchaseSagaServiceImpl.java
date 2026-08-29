@@ -1,9 +1,9 @@
-package com.z4greed.order.service.impl;
+package com.z4greed.order.service.saga.purchase.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.z4greed.order.dto.SagaContextDto;
+import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.entity.OrderEntity;
-import com.z4greed.order.entity.OrderSagaEntity;
+import com.z4greed.order.entity.PurchaseSagaEntity;
 import com.z4greed.order.entity.ProcessedEventEntity;
 import com.z4greed.order.enums.ErrorCodeEnum;
 import com.z4greed.order.enums.EventTypeEnum;
@@ -12,34 +12,34 @@ import com.z4greed.order.kafka.event.EventEnvelopeDto;
 import com.z4greed.order.mapper.ProcessedEventMapper;
 import com.z4greed.order.repository.OrderRepository;
 import com.z4greed.order.repository.ProcessedEventRepository;
-import com.z4greed.order.repository.SagaRepository;
-import com.z4greed.order.service.OrderSagaService;
-import com.z4greed.order.strategy.OrderSagaEventStrategy;
-import com.z4greed.order.strategy.OrderSagaEventStrategyRegistry;
+import com.z4greed.order.repository.PurchaseSagaRepository;
+import com.z4greed.order.service.saga.purchase.PurchaseSagaService;
+import com.z4greed.order.service.saga.purchase.strategy.PurchaseSagaEventStrategy;
+import com.z4greed.order.service.saga.purchase.strategy.PurchaseSagaEventStrategyRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
 @Transactional
-public class OrderSagaServiceImpl implements OrderSagaService {
+public class PurchaseSagaServiceImpl implements PurchaseSagaService {
   private final OrderRepository orderRepository;
-  private final SagaRepository sagaRepository;
+  private final PurchaseSagaRepository purchaseSagaRepository;
   private final ProcessedEventRepository processedEventRepository;
   private final ProcessedEventMapper processedEventMapper;
-  private final OrderSagaEventStrategyRegistry eventStrategyRegistry;
+  private final PurchaseSagaEventStrategyRegistry eventStrategyRegistry;
   private final ObjectMapper mapper;
 
-  public OrderSagaServiceImpl(
+  public PurchaseSagaServiceImpl(
       OrderRepository orderRepository,
-      SagaRepository sagaRepository,
+      PurchaseSagaRepository purchaseSagaRepository,
       ProcessedEventRepository processedEventRepository,
       ProcessedEventMapper processedEventMapper,
-      OrderSagaEventStrategyRegistry eventStrategyRegistry,
+      PurchaseSagaEventStrategyRegistry eventStrategyRegistry,
       ObjectMapper mapper
   ) {
     this.orderRepository = orderRepository;
-    this.sagaRepository = sagaRepository;
+    this.purchaseSagaRepository = purchaseSagaRepository;
     this.processedEventRepository = processedEventRepository;
     this.processedEventMapper = processedEventMapper;
     this.eventStrategyRegistry = eventStrategyRegistry;
@@ -64,14 +64,14 @@ public class OrderSagaServiceImpl implements OrderSagaService {
       return;
     }
 
-    OrderSagaEventStrategy eventStrategy = this.findEventStrategy(eventEnvelopeDto);
+    PurchaseSagaEventStrategy eventStrategy = this.findEventStrategy(eventEnvelopeDto);
 
     if (eventStrategy == null) {
       return;
     }
 
-    SagaContextDto sagaContextDto = this.loadSagaContext(eventEnvelopeDto);
-    eventStrategy.execute(sagaContextDto);
+    PurchaseSagaContextDto purchaseSagaContextDto = this.loadSagaContext(eventEnvelopeDto);
+    eventStrategy.execute(purchaseSagaContextDto);
     this.markAsProcessed(eventEnvelopeDto);
   }
 
@@ -87,7 +87,7 @@ public class OrderSagaServiceImpl implements OrderSagaService {
     return this.processedEventRepository.existsById(eventEnvelopeDto.eventId());
   }
 
-  private OrderSagaEventStrategy findEventStrategy(EventEnvelopeDto eventEnvelopeDto) {
+  private PurchaseSagaEventStrategy findEventStrategy(EventEnvelopeDto eventEnvelopeDto) {
     String eventType = eventEnvelopeDto.eventType();
     Optional<EventTypeEnum> eventTypeEnum = EventTypeEnum.fromValue(eventType);
 
@@ -96,14 +96,14 @@ public class OrderSagaServiceImpl implements OrderSagaService {
         .orElse(null);
   }
 
-  private SagaContextDto loadSagaContext(EventEnvelopeDto eventEnvelopeDto) {
+  private PurchaseSagaContextDto loadSagaContext(EventEnvelopeDto eventEnvelopeDto) {
     Long orderId = Long.valueOf(eventEnvelopeDto.aggregateId());
     OrderEntity orderEntity = this.orderRepository.findById(orderId).orElseThrow();
-    OrderSagaEntity orderSagaEntity = this.sagaRepository.findByOrderId(orderId).orElseThrow();
+    PurchaseSagaEntity purchaseSagaEntity = this.purchaseSagaRepository.findByOrderId(orderId).orElseThrow();
 
-    return SagaContextDto.builder()
+    return PurchaseSagaContextDto.builder()
         .orderEntity(orderEntity)
-        .orderSagaEntity(orderSagaEntity)
+        .purchaseSagaEntity(purchaseSagaEntity)
         .sourceEvent(eventEnvelopeDto)
         .build();
   }
@@ -112,4 +112,5 @@ public class OrderSagaServiceImpl implements OrderSagaService {
     ProcessedEventEntity processedEventEntity = this.processedEventMapper.toEntity(eventEnvelopeDto);
     this.processedEventRepository.save(processedEventEntity);
   }
+
 }

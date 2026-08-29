@@ -1,4 +1,4 @@
-package com.z4greed.order.service;
+package com.z4greed.order.service.order;
 
 import com.z4greed.order.dto.CreateOrderRequestDto;
 import com.z4greed.order.dto.OrderResponseDto;

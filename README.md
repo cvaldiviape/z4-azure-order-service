@@ -11,7 +11,7 @@ Servicio responsable de crear pedidos y orquestar la Saga de compra.
 | Kafka | `localhost:9092` |
 | Consumer group ID | `purchase-saga-consumer-group-id` |
 
-`localhost:5434` corresponde al puerto publicado por `orders-db`. Dentro del contenedor PostgreSQL continúa utilizando `5432`.
+`localhost:5434` corresponde al puerto publicado por `orders-postgres`. Dentro del contenedor PostgreSQL continúa utilizando `5432`.
 
 ## Kafka
 
@@ -48,7 +48,7 @@ SPRING_PROFILES_ACTIVE
 Desde la raíz del proyecto:
 
 ```bash
-docker compose -f infra/docker-compose.yml up -d kafka orders-db
+docker compose -f infra/docker-compose.yml up -d kafka orders-postgres
 ```
 
 Después ejecuta `OrderServiceApplication` con **Debug** en IntelliJ.

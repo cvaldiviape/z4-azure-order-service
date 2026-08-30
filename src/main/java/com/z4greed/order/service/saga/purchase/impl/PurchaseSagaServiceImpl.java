@@ -65,7 +65,7 @@ public class PurchaseSagaServiceImpl implements PurchaseSagaService {
     try {
       this.processEvent(eventEnvelopeDto);
     } catch (RuntimeException exception) {
-      log.error("action=event_processing_failed eventType={} eventId={} correlationId={} orderId={}", eventEnvelopeDto.eventType(), eventEnvelopeDto.eventId(), eventEnvelopeDto.correlationId(), eventEnvelopeDto.aggregateId(), exception);
+      log.error("action=event_processing_failed eventType={} eventId={} correlationId={} orderId={} exceptionType={} errorMessage=\"{}\"", eventEnvelopeDto.eventType(), eventEnvelopeDto.eventId(), eventEnvelopeDto.correlationId(), eventEnvelopeDto.aggregateId(), exception.getClass().getSimpleName(), exception.getMessage(), exception);
       throw exception;
     }
   }

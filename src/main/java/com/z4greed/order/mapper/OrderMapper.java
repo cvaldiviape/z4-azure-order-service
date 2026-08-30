@@ -6,20 +6,6 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface OrderMapper {
-  @Named("OrderMapper.toEntity")
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "updatedAt", ignore = true)
-  @Mapping(target = "listItems", ignore = true)
-  OrderEntity toEntity(OrderCreateDto dto);
-
-  @Named("OrderMapper.toItemEntity")
-  @Mapping(target = "id", ignore = true)
-  OrderItemEntity toItemEntity(OrderItemCreateDto dto);
-
-  @Named("OrderMapper.toPurchaseSagaEntity")
-  @Mapping(target = "id", ignore = true)
-  PurchaseSagaEntity toPurchaseSagaEntity(PurchaseSagaCreateDto dto);
-
   @Named("OrderMapper.toItemDto")
   ItemResponseDto toItemDto(OrderItemEntity entity);
 

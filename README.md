@@ -34,6 +34,36 @@ payments-events-topic
 
 El consumer group ID identifica el progreso de las instancias consumidoras; no es un topic.
 
+## Historial de la Saga
+
+`purchase_sagas` conserva el estado actual de una Saga de compra y mantiene una sola fila por pedido. `purchase_saga_histories` funciona como una bitácora append-only: agrega una fila por cada transición y no modifica las transiciones anteriores.
+
+Cada fila registra:
+
+- El identificador de la Saga y del pedido.
+- El estado de la orden después de procesar el evento.
+- El estado de la Saga después de procesar el evento.
+- El tipo y el identificador único del evento.
+- El mensaje de error, cuando corresponda.
+- La fecha y hora de la transición.
+
+Para consultar cronológicamente el recorrido de una orden desde PostgreSQL o pgAdmin:
+
+```sql
+SELECT
+    event_type,
+    order_status,
+    saga_status,
+    event_id,
+    error_message,
+    created_at
+FROM purchase_saga_histories
+WHERE order_id = 1
+ORDER BY created_at, id;
+```
+
+Flyway crea esta tabla mediante `V5__create_purchase_saga_histories.sql`.
+
 ## Variables disponibles
 
 ```text

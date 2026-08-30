@@ -25,26 +25,34 @@ public class OrderServiceImpl implements OrderService {
   private final OrderEventProducer orderEventProducer;
   private final OrderMapper orderMapper;
   private final OrderEventFactory orderEventFactory;
+  private final PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
 
   public OrderServiceImpl(
       OrderRepository orderRepository,
       PurchaseSagaRepository purchaseSagaRepository,
       OrderEventProducer orderEventProducer,
       OrderMapper orderMapper,
-      OrderEventFactory orderEventFactory
+      OrderEventFactory orderEventFactory,
+      PurchaseSagaHistoryRepository purchaseSagaHistoryRepository
   ) {
     this.orderRepository = orderRepository;
     this.purchaseSagaRepository = purchaseSagaRepository;
     this.orderEventProducer = orderEventProducer;
     this.orderMapper = orderMapper;
     this.orderEventFactory = orderEventFactory;
+    this.purchaseSagaHistoryRepository = purchaseSagaHistoryRepository;
   }
 
   @Override
   public OrderResponseDto create(Long customerId, CreateOrderRequestDto requestDto) {
     OrderEntity orderEntity = this.createOrder(customerId, requestDto);
-    this.createPurchaseSaga(orderEntity);
-    this.publishOrderCreated(orderEntity, requestDto);
+    EventEnvelopeDto eventEnvelopeDto = this.buildOrderCreatedEvent(orderEntity, requestDto);
+
+    LocalDateTime createdAt = LocalDateTime.now();
+    PurchaseSagaEntity savedPurchaseSagaEntity = this.createPurchaseSaga(orderEntity, eventEnvelopeDto, createdAt);
+    this.createPurchaseSagaHistory(orderEntity, eventEnvelopeDto, savedPurchaseSagaEntity, createdAt);
+
+    this.publishOrderCreated(eventEnvelopeDto);
     return this.orderMapper.toDto(orderEntity);
   }
 
@@ -52,9 +60,7 @@ public class OrderServiceImpl implements OrderService {
     List<@Valid ItemRequestDto> listItems = requestDto.listItems();
 
     BigDecimal totalAmount = this.calculateTotal(listItems);
-    OrderCreateDto orderCreateDto = this.buildOrderCreate(customerId, requestDto, totalAmount);
-
-    OrderEntity orderEntity = this.orderMapper.toEntity(orderCreateDto);
+    OrderEntity orderEntity = this.buildOrderEntity(customerId, requestDto, totalAmount);
     List<OrderItemEntity> listItemEntities = this.buildListItemsEntities(listItems, orderEntity);
 
     orderEntity.setListItems(listItemEntities);
@@ -68,8 +74,8 @@ public class OrderServiceImpl implements OrderService {
             .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
-  private OrderCreateDto buildOrderCreate(Long customerId, CreateOrderRequestDto requestDto, BigDecimal totalAmount) {
-      return OrderCreateDto.builder()
+  private OrderEntity buildOrderEntity(Long customerId, CreateOrderRequestDto requestDto, BigDecimal totalAmount) {
+      return OrderEntity.builder()
           .customerId(customerId)
           .status(OrderStatusEnum.CREATED)
           .totalAmount(totalAmount)
@@ -85,7 +91,7 @@ public class OrderServiceImpl implements OrderService {
         .map(itemDto -> {
           BigDecimal subtotal = this.calculateSubtotal(itemDto);
 
-          OrderItemCreateDto orderItemCreateDto = OrderItemCreateDto.builder()
+          return OrderItemEntity.builder()
                   .order(orderEntity)
                   .productId(itemDto.productId())
                   .productName(itemDto.productName())
@@ -93,8 +99,6 @@ public class OrderServiceImpl implements OrderService {
                   .quantity(itemDto.quantity())
                   .subtotal(subtotal)
                   .build();
-
-          return this.orderMapper.toItemEntity(orderItemCreateDto);
         })
         .toList();
   }
@@ -106,23 +110,39 @@ public class OrderServiceImpl implements OrderService {
     return unitPrice.multiply(BigDecimal.valueOf(quantity));
   }
 
-  private void createPurchaseSaga(OrderEntity orderEntity) {
-    PurchaseSagaCreateDto purchaseSagaCreateDto = PurchaseSagaCreateDto.builder()
+  private PurchaseSagaEntity createPurchaseSaga(OrderEntity orderEntity, EventEnvelopeDto eventEnvelopeDto, LocalDateTime createdAt) {
+    PurchaseSagaEntity purchaseSagaEntity = PurchaseSagaEntity.builder()
         .order(orderEntity)
         .status(SagaStatusEnum.STARTED)
         .currentStep(EventTypeEnum.ORDER_CREATED.getValue())
-        .createdAt(LocalDateTime.now())
+        .lastEventId(eventEnvelopeDto.eventId())
+        .createdAt(createdAt)
         .build();
 
-    PurchaseSagaEntity purchaseSagaEntity = this.orderMapper.toPurchaseSagaEntity(purchaseSagaCreateDto);
-
-    this.purchaseSagaRepository.save(purchaseSagaEntity);
+      return this.purchaseSagaRepository.save(purchaseSagaEntity);
   }
 
-  private void publishOrderCreated(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
-    Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
-    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity,null, mapPayload);
+  private void createPurchaseSagaHistory(OrderEntity orderEntity, EventEnvelopeDto eventEnvelopeDto, PurchaseSagaEntity savedPurchaseSagaEntity, LocalDateTime createdAt) {
+    PurchaseSagaHistoryEntity purchaseSagaHistoryEntity = PurchaseSagaHistoryEntity.builder()
+        .purchaseSaga(savedPurchaseSagaEntity)
+        .orderId(orderEntity.getId())
+        .orderStatus(orderEntity.getStatus())
+        .sagaStatus(savedPurchaseSagaEntity.getStatus())
+        .eventType(EventTypeEnum.ORDER_CREATED)
+        .eventId(eventEnvelopeDto.eventId())
+        .errorMessage(savedPurchaseSagaEntity.getErrorMessage())
+        .createdAt(createdAt)
+        .build();
 
+    this.purchaseSagaHistoryRepository.save(purchaseSagaHistoryEntity);
+  }
+
+  private EventEnvelopeDto buildOrderCreatedEvent(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
+    Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
+    return this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity, null, mapPayload);
+  }
+
+  private void publishOrderCreated(EventEnvelopeDto eventEnvelopeDto) {
     this.orderEventProducer.publish("orders-events-topic", eventEnvelopeDto);
   }
 

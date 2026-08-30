@@ -60,3 +60,7 @@ Para compilar sin ejecutar pruebas:
 ```bash
 ./mvnw clean package -DskipTests
 ```
+
+## Errores de validación
+
+`GlobalExceptionHandler` transforma los errores generados por Spring Validation al contrato común `ResponseDto`. El campo `data` contiene un mapa con el nombre de cada campo inválido y su mensaje correspondiente.

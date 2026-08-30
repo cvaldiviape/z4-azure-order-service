@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCodeEnum {
+  VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Request validation failed"),
   ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Order not found"),
   ORDER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Order access denied"),
   INVALID_EVENT(HttpStatus.BAD_REQUEST, "Invalid event"),

@@ -14,11 +14,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@Slf4j
 public class OrderServiceImpl implements OrderService {
   private final OrderRepository orderRepository;
   private final PurchaseSagaRepository purchaseSagaRepository;
@@ -46,13 +48,15 @@ public class OrderServiceImpl implements OrderService {
   @Override
   public OrderResponseDto create(Long customerId, CreateOrderRequestDto requestDto) {
     OrderEntity orderEntity = this.createOrder(customerId, requestDto);
-    EventEnvelopeDto eventEnvelopeDto = this.buildOrderCreatedEvent(orderEntity, requestDto);
+    EventEnvelopeDto orderCreatedEvent = this.buildOrderCreatedEvent(orderEntity);
 
     LocalDateTime createdAt = LocalDateTime.now();
-    PurchaseSagaEntity savedPurchaseSagaEntity = this.createPurchaseSaga(orderEntity, eventEnvelopeDto, createdAt);
-    this.createPurchaseSagaHistory(orderEntity, eventEnvelopeDto, savedPurchaseSagaEntity, createdAt);
+    PurchaseSagaEntity savedPurchaseSagaEntity = this.createPurchaseSaga(orderEntity, orderCreatedEvent, createdAt);
+    this.createPurchaseSagaHistory(orderEntity, orderCreatedEvent, savedPurchaseSagaEntity, createdAt);
+    log.info("action=saga_started eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", orderCreatedEvent.eventType(), orderCreatedEvent.eventId(), orderCreatedEvent.correlationId(), orderEntity.getId(), orderEntity.getStatus(), savedPurchaseSagaEntity.getStatus());
 
-    this.publishOrderCreated(eventEnvelopeDto);
+    EventEnvelopeDto reserveStockCommand = this.buildReserveStockCommand(orderEntity, requestDto, orderCreatedEvent.eventId());
+    this.publishReserveStock(reserveStockCommand);
     return this.orderMapper.toDto(orderEntity);
   }
 
@@ -137,13 +141,18 @@ public class OrderServiceImpl implements OrderService {
     this.purchaseSagaHistoryRepository.save(purchaseSagaHistoryEntity);
   }
 
-  private EventEnvelopeDto buildOrderCreatedEvent(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
-    Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
+  private EventEnvelopeDto buildOrderCreatedEvent(OrderEntity orderEntity) {
+    Map<String, Object> mapPayload = Map.of();
     return this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity, null, mapPayload);
   }
 
-  private void publishOrderCreated(EventEnvelopeDto eventEnvelopeDto) {
-    this.orderEventProducer.publish("orders-events-topic", eventEnvelopeDto);
+  private EventEnvelopeDto buildReserveStockCommand(OrderEntity orderEntity, CreateOrderRequestDto requestDto, String causationId) {
+    Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
+    return this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, causationId, mapPayload);
+  }
+
+  private void publishReserveStock(EventEnvelopeDto eventEnvelopeDto) {
+    this.orderEventProducer.publish("inventory-commands-topic", eventEnvelopeDto);
   }
 
   private Map<String, Object> buildMapPayload(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {

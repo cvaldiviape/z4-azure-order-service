@@ -44,7 +44,7 @@ public class StockReservedEventStrategy implements PurchaseSagaEventStrategy {
 
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, causationId, mapPayload);
 
-    this.orderEventProducer.publish("payments-events-topic", eventEnvelopeDto);
+    this.orderEventProducer.publish("payments-commands-topic", eventEnvelopeDto);
   }
 
   private Map<String, Object> buildMapPayload(OrderEntity orderEntity) {

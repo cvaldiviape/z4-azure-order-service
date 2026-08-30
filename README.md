@@ -17,12 +17,12 @@ Flyway crea y modifica el esquema mediante `db/migration`. Hibernate utiliza `dd
 
 ## Kafka
 
-Produce eventos en:
+Publica comandos y eventos en:
 
 ```text
 orders-events-topic
-inventory-events-topic
-payments-events-topic
+inventory-commands-topic
+payments-commands-topic
 ```
 
 `PurchaseSagaEventConsumer` permanece a la escucha de:
@@ -31,6 +31,8 @@ payments-events-topic
 inventory-events-topic
 payments-events-topic
 ```
+
+Los topics `*-commands-topic` transportan solicitudes dirigidas a un servicio. Los topics `*-events-topic` transportan resultados que ya ocurrieron. Esta separación evita que un servicio consuma sus propias respuestas.
 
 El consumer group ID identifica el progreso de las instancias consumidoras; no es un topic.
 

@@ -16,12 +16,14 @@ import com.z4greed.order.repository.PurchaseSagaRepository;
 import com.z4greed.order.service.saga.purchase.PurchaseSagaService;
 import com.z4greed.order.service.saga.purchase.strategy.PurchaseSagaEventStrategy;
 import com.z4greed.order.service.saga.purchase.strategy.PurchaseSagaEventStrategyRegistry;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
 @Transactional
+@Slf4j
 public class PurchaseSagaServiceImpl implements PurchaseSagaService {
   private final OrderRepository orderRepository;
   private final PurchaseSagaRepository purchaseSagaRepository;
@@ -58,27 +60,42 @@ public class PurchaseSagaServiceImpl implements PurchaseSagaService {
 
   private void handleEvent(String rawEvent) {
     EventEnvelopeDto eventEnvelopeDto = this.readEvent(rawEvent);
+    log.info("action=event_received eventType={} eventId={} correlationId={} orderId={} producer={}", eventEnvelopeDto.eventType(), eventEnvelopeDto.eventId(), eventEnvelopeDto.correlationId(), eventEnvelopeDto.aggregateId(), eventEnvelopeDto.producer());
+
+    try {
+      this.processEvent(eventEnvelopeDto);
+    } catch (RuntimeException exception) {
+      log.error("action=event_processing_failed eventType={} eventId={} correlationId={} orderId={}", eventEnvelopeDto.eventType(), eventEnvelopeDto.eventId(), eventEnvelopeDto.correlationId(), eventEnvelopeDto.aggregateId(), exception);
+      throw exception;
+    }
+  }
+
+  private void processEvent(EventEnvelopeDto eventEnvelopeDto) {
     Boolean wasProcessed = this.wasProcessed(eventEnvelopeDto);
 
     if (wasProcessed) {
+      log.info("action=event_ignored reason=already_processed eventType={} eventId={} correlationId={} orderId={}", eventEnvelopeDto.eventType(), eventEnvelopeDto.eventId(), eventEnvelopeDto.correlationId(), eventEnvelopeDto.aggregateId());
       return;
     }
 
     PurchaseSagaEventStrategy eventStrategy = this.findEventStrategy(eventEnvelopeDto);
 
     if (eventStrategy == null) {
+      log.info("action=event_ignored reason=unsupported_event_type eventType={} eventId={} correlationId={} orderId={}", eventEnvelopeDto.eventType(), eventEnvelopeDto.eventId(), eventEnvelopeDto.correlationId(), eventEnvelopeDto.aggregateId());
       return;
     }
 
     PurchaseSagaContextDto purchaseSagaContextDto = this.loadSagaContext(eventEnvelopeDto);
     eventStrategy.execute(purchaseSagaContextDto);
     this.markAsProcessed(eventEnvelopeDto);
+    log.info("action=event_processed eventType={} eventId={} correlationId={} orderId={}", eventEnvelopeDto.eventType(), eventEnvelopeDto.eventId(), eventEnvelopeDto.correlationId(), eventEnvelopeDto.aggregateId());
   }
 
   private EventEnvelopeDto readEvent(String rawEvent) {
     try {
       return this.mapper.readValue(rawEvent, EventEnvelopeDto.class);
     } catch (Exception exception) {
+      log.error("action=event_deserialization_failed message=Invalid_Kafka_event", exception);
       throw new GreedException(ErrorCodeEnum.INVALID_EVENT, exception);
     }
   }

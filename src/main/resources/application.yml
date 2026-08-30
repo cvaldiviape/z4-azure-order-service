@@ -13,7 +13,7 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}  # Dirección del broker. La variable permite sobrescribir localhost en otros entornos.
     consumer:
-      group-id: purchase-saga-consumer-group-id # Grupo suscriptor de la Saga de compra para inventory-events-topic y payments-events-topic.
+      group-id: purchase-saga-consumer-group-id # Grupo suscriptor de la Saga para las respuestas de inventory-events-topic y payments-events-topic.
       auto-offset-reset: earliest # Si el grupo no tiene un offset guardado, comienza desde el mensaje más antiguo.
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # Los eventos se reciben como texto porque el proyecto deserializa el JSON manualmente.
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

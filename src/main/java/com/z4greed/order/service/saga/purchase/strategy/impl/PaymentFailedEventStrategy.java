@@ -43,7 +43,7 @@ public class PaymentFailedEventStrategy implements PurchaseSagaEventStrategy {
 
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RELEASE_STOCK, orderEntity, causationId, mapPayload);
 
-    this.orderEventProducer.publish("inventory-events-topic", eventEnvelopeDto);
+    this.orderEventProducer.publish("inventory-commands-topic", eventEnvelopeDto);
   }
 
 }

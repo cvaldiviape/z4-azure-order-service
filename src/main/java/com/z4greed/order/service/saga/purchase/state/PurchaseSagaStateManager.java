@@ -9,9 +9,11 @@ import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.repository.PurchaseSagaHistoryRepository;
 import java.time.LocalDateTime;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class PurchaseSagaStateManager {
   private final PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
 
@@ -26,6 +28,20 @@ public class PurchaseSagaStateManager {
     this.updateOrder(orderEntity, orderStatusEnum, updatedAt);
     this.updateSaga(purchaseSagaContextDto, sagaStatusEnum, eventTypeEnum, errorMessage, updatedAt);
     this.createPurchaseSagaHistory(purchaseSagaContextDto, eventTypeEnum, orderEntity, updatedAt);
+    this.logSagaState(purchaseSagaContextDto, eventTypeEnum, orderEntity);
+  }
+
+  private void logSagaState(PurchaseSagaContextDto purchaseSagaContextDto, EventTypeEnum eventTypeEnum, OrderEntity orderEntity) {
+    PurchaseSagaEntity purchaseSagaEntity = purchaseSagaContextDto.purchaseSagaEntity();
+    String correlationId = purchaseSagaContextDto.sourceEvent().correlationId();
+    String errorMessage = purchaseSagaEntity.getErrorMessage();
+
+    if (errorMessage == null) {
+      log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", eventTypeEnum.getValue(), purchaseSagaContextDto.sourceEvent().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus());
+      return;
+    }
+
+    log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={} errorMessage=\"{}\"", eventTypeEnum.getValue(), purchaseSagaContextDto.sourceEvent().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus(), errorMessage);
   }
 
   private void updateOrder(OrderEntity orderEntity, OrderStatusEnum orderStatusEnum, LocalDateTime updatedAt) {

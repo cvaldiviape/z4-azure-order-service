@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum EventTypeEnum {
   ORDER_CREATED("ORDER_CREATED"),
+  RESERVE_STOCK("RESERVE_STOCK"),
   STOCK_RESERVED("STOCK_RESERVED"),
   STOCK_NOT_AVAILABLE("STOCK_NOT_AVAILABLE"),
   STOCK_RELEASED("STOCK_RELEASED"),

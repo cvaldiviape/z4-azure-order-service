@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentFailedEventStrategy implements PurchaseSagaEventStrategy {
-  private static final String INVENTORY_TOPIC = "inventory-events-topic";
-
   private final PurchaseSagaStateManager purchaseSagaStateManager;
   private final OrderEventFactory orderEventFactory;
   private final OrderEventProducer orderEventProducer;
@@ -45,7 +43,7 @@ public class PaymentFailedEventStrategy implements PurchaseSagaEventStrategy {
 
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RELEASE_STOCK, orderEntity, causationId, mapPayload);
 
-    this.orderEventProducer.publish(INVENTORY_TOPIC, eventEnvelopeDto);
+    this.orderEventProducer.publish("inventory-events-topic", eventEnvelopeDto);
   }
 
 }

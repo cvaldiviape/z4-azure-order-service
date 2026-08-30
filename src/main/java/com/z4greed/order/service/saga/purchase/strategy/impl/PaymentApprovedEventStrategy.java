@@ -15,8 +15,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentApprovedEventStrategy implements PurchaseSagaEventStrategy {
-  private static final String ORDERS_TOPIC = "orders-events-topic";
-
   private final PurchaseSagaStateManager purchaseSagaStateManager;
   private final OrderEventFactory orderEventFactory;
   private final OrderEventProducer orderEventProducer;
@@ -46,7 +44,7 @@ public class PaymentApprovedEventStrategy implements PurchaseSagaEventStrategy {
 
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.ORDER_CONFIRMED, orderEntity, causationId, mapPayload);
 
-    this.orderEventProducer.publish(ORDERS_TOPIC, eventEnvelopeDto);
+    this.orderEventProducer.publish("orders-events-topic", eventEnvelopeDto);
   }
 
 }

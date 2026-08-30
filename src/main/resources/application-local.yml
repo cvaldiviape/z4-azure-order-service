@@ -3,3 +3,7 @@ spring:
     url: ${ORDERS_DB_URL:jdbc:postgresql://localhost:5434/orders_db}
     username: ${ORDERS_DB_USERNAME:ecommerce}
     password: ${ORDERS_DB_PASSWORD:ecommerce}
+
+logging:
+  file:
+    name: ${LOG_FILE:logs/order-service.log}

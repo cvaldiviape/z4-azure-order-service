@@ -1,0 +1,15 @@
+ALTER TABLE orders
+    ALTER COLUMN created_at TYPE TIMESTAMP WITHOUT TIME ZONE
+        USING created_at AT TIME ZONE 'UTC',
+    ALTER COLUMN updated_at TYPE TIMESTAMP WITHOUT TIME ZONE
+        USING updated_at AT TIME ZONE 'UTC';
+
+ALTER TABLE order_sagas
+    ALTER COLUMN created_at TYPE TIMESTAMP WITHOUT TIME ZONE
+        USING created_at AT TIME ZONE 'UTC',
+    ALTER COLUMN updated_at TYPE TIMESTAMP WITHOUT TIME ZONE
+        USING updated_at AT TIME ZONE 'UTC';
+
+ALTER TABLE processed_events
+    ALTER COLUMN processed_at TYPE TIMESTAMP WITHOUT TIME ZONE
+        USING processed_at AT TIME ZONE 'UTC';

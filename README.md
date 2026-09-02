@@ -82,7 +82,7 @@ SPRING_PROFILES_ACTIVE
 Desde la raíz del proyecto:
 
 ```bash
-docker compose -f infra/docker-compose.yml up -d kafka orders-postgres
+docker compose -f infra/docker/docker-compose.yml up -d kafka orders-postgres
 ```
 
 Después ejecuta `OrderServiceApplication` con **Debug** en IntelliJ.

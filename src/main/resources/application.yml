@@ -20,7 +20,13 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer # Las claves y los eventos se publican como texto. La clave mantiene juntos los eventos del pedido.
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: record # Confirma el offset de cada mensaje después de procesarlo o enviarlo a su DLT.
 
 app:
+  kafka:
+    retry:
+      interval-milliseconds: ${KAFKA_RETRY_INTERVAL_MILLISECONDS:2000} # Espera 2 segundos entre intentos.
+      max-attempts: ${KAFKA_RETRY_MAX_ATTEMPTS:3} # Incluye el intento inicial: 1 inicial + 2 reintentos.
   jwt:
     secret: ${JWT_SECRET:change-me-change-me-change-me-32-bytes}

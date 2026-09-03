@@ -1,5 +1,6 @@
 package com.z4greed.order.kafka.config;
 
+import com.z4greed.order.exception.CustomRetryableKafkaException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -7,6 +8,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.RecoverableDataAccessException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.KafkaAdmin.NewTopics;
@@ -37,6 +40,15 @@ public class KafkaConsumerRetryConfig {
     long maxRetries = Math.max(this.maxAttempts - 1L, 0L);
     FixedBackOff fixedBackOff = new FixedBackOff(this.retryIntervalMilliseconds, maxRetries);
     DefaultErrorHandler defaultErrorHandler = new DefaultErrorHandler(deadLetterPublishingRecoverer, fixedBackOff);
+    // La política es restrictiva: cualquier excepción desconocida va directamente al DLT.
+    // Solo se reintentan fallos que declaramos explícitamente como temporales o recuperables.
+    defaultErrorHandler.defaultFalse();
+    defaultErrorHandler.addRetryableExceptions(
+        CustomRetryableKafkaException.class,
+        TransientDataAccessException.class,
+        RecoverableDataAccessException.class);
+
+
     defaultErrorHandler.setRetryListeners(this::logRetryAttempt);
     return defaultErrorHandler;
   }
@@ -73,17 +85,11 @@ public class KafkaConsumerRetryConfig {
   @Bean
   public NewTopics purchaseSagaDeadLetterTopics() {
     NewTopic newTopic1 = TopicBuilder.name("inventory-events-topic-dlt")
-            // Una partición basta en local. Debe haber al menos tantas como en el topic de origen,
-            // ya que el recoverer conserva el número de partición del mensaje que falló.
             .partitions(1)
-            // Una réplica crea una sola copia en el broker local. En producción normalmente se
-            // configura un valor mayor (por ejemplo 3) para sobrevivir a la caída de un broker.
             .replicas(1)
             .build();
     NewTopic newTopic2 = TopicBuilder.name("payments-events-topic-dlt")
-            // Este topic usa la misma cantidad por la misma razón: conservar la partición original.
             .partitions(1)
-            // El entorno actual tiene un único broker, por eso solo puede almacenar una réplica.
             .replicas(1)
             .build();
 

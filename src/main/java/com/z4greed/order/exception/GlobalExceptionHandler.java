@@ -39,8 +39,8 @@ public class GlobalExceptionHandler {
     return mapValidationErrors;
   }
 
-  @ExceptionHandler(GreedException.class)
-  public ResponseEntity<ResponseDto<Void>> handleGreedException(GreedException exception) {
+  @ExceptionHandler(CustomBusinessException.class)
+  public ResponseEntity<ResponseDto<Void>> handleBusinessException(CustomBusinessException exception) {
     ErrorCodeEnum errorCode = exception.getErrorCode();
     ResponseDto<Void> responseDto =
         ResponseDto.<Void>builder()

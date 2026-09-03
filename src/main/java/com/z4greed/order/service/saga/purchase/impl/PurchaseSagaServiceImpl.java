@@ -7,7 +7,7 @@ import com.z4greed.order.entity.PurchaseSagaEntity;
 import com.z4greed.order.entity.ProcessedEventEntity;
 import com.z4greed.order.enums.ErrorCodeEnum;
 import com.z4greed.order.enums.EventTypeEnum;
-import com.z4greed.order.exception.GreedException;
+import com.z4greed.order.exception.CustomNonRetryableKafkaException;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
 import com.z4greed.order.mapper.ProcessedEventMapper;
 import com.z4greed.order.repository.OrderRepository;
@@ -96,7 +96,7 @@ public class PurchaseSagaServiceImpl implements PurchaseSagaService {
       return this.mapper.readValue(rawEvent, EventEnvelopeDto.class);
     } catch (Exception exception) {
       log.error("action=event_deserialization_failed message=Invalid_Kafka_event", exception);
-      throw new GreedException(ErrorCodeEnum.INVALID_EVENT, exception);
+      throw new CustomNonRetryableKafkaException(ErrorCodeEnum.INVALID_EVENT, exception);
     }
   }
 

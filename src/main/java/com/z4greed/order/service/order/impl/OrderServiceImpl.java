@@ -3,7 +3,7 @@ package com.z4greed.order.service.order.impl;
 import com.z4greed.order.dto.*;
 import com.z4greed.order.entity.*;
 import com.z4greed.order.enums.*;
-import com.z4greed.order.exception.GreedException;
+import com.z4greed.order.exception.CustomBusinessException;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
 import com.z4greed.order.kafka.producer.OrderEventProducer;
@@ -177,13 +177,13 @@ public class OrderServiceImpl implements OrderService {
 
   private OrderEntity findOrder(Long orderId) {
     return this.orderRepository.findById(orderId)
-        .orElseThrow(() -> new GreedException(ErrorCodeEnum.ORDER_NOT_FOUND));
+        .orElseThrow(() -> new CustomBusinessException(ErrorCodeEnum.ORDER_NOT_FOUND));
   }
 
   private void validateOwnership(OrderEntity orderEntity, Long customerId) {
     Long customerIdCurrent = orderEntity.getCustomerId();
     if (!customerIdCurrent.equals(customerId)) {
-      throw new GreedException(ErrorCodeEnum.ORDER_ACCESS_DENIED);
+      throw new CustomBusinessException(ErrorCodeEnum.ORDER_ACCESS_DENIED);
     }
   }
 

@@ -2,7 +2,7 @@ package com.z4greed.order.kafka.producer;
 
 import tools.jackson.databind.ObjectMapper;
 import com.z4greed.order.enums.ErrorCodeEnum;
-import com.z4greed.order.exception.GreedException;
+import com.z4greed.order.exception.CustomNonRetryableKafkaException;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -33,7 +33,7 @@ public class OrderEventProducer {
       });
     } catch (Exception exception) {
       log.error("action=event_serialization_failed topic={} eventType={} eventId={} correlationId={} orderId={}", topic, event.eventType(), event.eventId(), event.correlationId(), event.aggregateId(), exception);
-      throw new GreedException(ErrorCodeEnum.EVENT_PUBLISH_FAILED, exception);
+      throw new CustomNonRetryableKafkaException(ErrorCodeEnum.EVENT_PUBLISH_FAILED, exception);
     }
   }
 

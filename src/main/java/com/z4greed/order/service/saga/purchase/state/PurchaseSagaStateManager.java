@@ -31,24 +31,10 @@ public class PurchaseSagaStateManager {
     this.logSagaState(purchaseSagaContextDto, eventTypeEnum, orderEntity);
   }
 
-  private void logSagaState(PurchaseSagaContextDto purchaseSagaContextDto, EventTypeEnum eventTypeEnum, OrderEntity orderEntity) {
-    PurchaseSagaEntity purchaseSagaEntity = purchaseSagaContextDto.purchaseSagaEntity();
-    String correlationId = purchaseSagaContextDto.sourceEvent().correlationId();
-    String errorMessage = purchaseSagaEntity.getErrorMessage();
-
-    if (errorMessage == null) {
-      log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", eventTypeEnum.getValue(), purchaseSagaContextDto.sourceEvent().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus());
-      return;
-    }
-
-    log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={} errorMessage=\"{}\"", eventTypeEnum.getValue(), purchaseSagaContextDto.sourceEvent().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus(), errorMessage);
-  }
-
   private void updateOrder(OrderEntity orderEntity, OrderStatusEnum orderStatusEnum, LocalDateTime updatedAt) {
     if (orderStatusEnum == null) {
       return;
     }
-
     orderEntity.setStatus(orderStatusEnum);
     orderEntity.setUpdatedAt(updatedAt);
   }
@@ -79,6 +65,18 @@ public class PurchaseSagaStateManager {
             .build();
 
     this.purchaseSagaHistoryRepository.save(purchaseSagaHistoryEntity);
+  }
+
+  private void logSagaState(PurchaseSagaContextDto purchaseSagaContextDto, EventTypeEnum eventTypeEnum, OrderEntity orderEntity) {
+    PurchaseSagaEntity purchaseSagaEntity = purchaseSagaContextDto.purchaseSagaEntity();
+    String correlationId = purchaseSagaContextDto.sourceEvent().correlationId();
+    String errorMessage = purchaseSagaEntity.getErrorMessage();
+
+    if (errorMessage == null) {
+      log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", eventTypeEnum.getValue(), purchaseSagaContextDto.sourceEvent().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus());
+      return;
+    }
+    log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={} errorMessage=\"{}\"", eventTypeEnum.getValue(), purchaseSagaContextDto.sourceEvent().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus(), errorMessage);
   }
 
 }

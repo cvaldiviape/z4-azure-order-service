@@ -55,8 +55,7 @@ public class OrderServiceImpl implements OrderService {
     this.createPurchaseSagaHistory(orderEntity, orderCreatedEvent, savedPurchaseSagaEntity, createdAt);
     log.info("action=saga_started eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", orderCreatedEvent.eventType(), orderCreatedEvent.eventId(), orderCreatedEvent.correlationId(), orderEntity.getId(), orderEntity.getStatus(), savedPurchaseSagaEntity.getStatus());
 
-    EventEnvelopeDto reserveStockCommand = this.buildReserveStockCommand(orderEntity, requestDto, orderCreatedEvent.eventId());
-    this.publishReserveStock(reserveStockCommand);
+    this.publishReserveStock(orderCreatedEvent, orderEntity, requestDto);
     return this.orderMapper.toDto(orderEntity);
   }
 
@@ -146,12 +145,11 @@ public class OrderServiceImpl implements OrderService {
     return this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity, null, mapPayload);
   }
 
-  private EventEnvelopeDto buildReserveStockCommand(OrderEntity orderEntity, CreateOrderRequestDto requestDto, String causationId) {
+  private void publishReserveStock(EventEnvelopeDto orderCreatedEvent,  OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
+    String causationId = orderCreatedEvent.eventId();
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
-    return this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, causationId, mapPayload);
-  }
+    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, causationId, mapPayload);
 
-  private void publishReserveStock(EventEnvelopeDto eventEnvelopeDto) {
     this.orderEventProducer.publish("inventory-commands-topic", eventEnvelopeDto);
   }
 

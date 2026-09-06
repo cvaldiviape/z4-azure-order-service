@@ -1,4 +1,4 @@
-package com.z4greed.order.service.saga.purchase.strategy.impl;
+package com.z4greed.order.strategy.impl;
 
 import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.entity.OrderEntity;
@@ -7,26 +7,26 @@ import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
-import com.z4greed.order.kafka.producer.OrderEventProducer;
-import com.z4greed.order.service.saga.purchase.strategy.PurchaseSagaEventStrategy;
-import com.z4greed.order.service.saga.purchase.state.PurchaseSagaStateManager;
+import com.z4greed.order.service.OutboxEventService;
+import com.z4greed.order.strategy.EventStrategy;
+import com.z4greed.order.saga.state.PurchaseSagaStateManager;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StockReservedEventStrategy implements PurchaseSagaEventStrategy {
+public class StockReservedEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
   private final PurchaseSagaStateManager purchaseSagaStateManager;
   private final OrderEventFactory orderEventFactory;
-  private final OrderEventProducer orderEventProducer;
+  private final OutboxEventService outboxEventService;
 
   public StockReservedEventStrategy(
       PurchaseSagaStateManager purchaseSagaStateManager,
       OrderEventFactory orderEventFactory,
-      OrderEventProducer orderEventProducer
+      OutboxEventService outboxEventService
   ) {
     this.purchaseSagaStateManager = purchaseSagaStateManager;
     this.orderEventFactory = orderEventFactory;
-    this.orderEventProducer = orderEventProducer;
+    this.outboxEventService = outboxEventService;
   }
 
   @Override
@@ -40,20 +40,16 @@ public class StockReservedEventStrategy implements PurchaseSagaEventStrategy {
 
     OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
     String causationId = purchaseSagaContextDto.sourceEvent().eventId();
-    Map<String, Object> mapPayload = this.buildMapPayload(orderEntity);
+    Map<String, Object> mapPayload =  Map.of(
+            "customerId", orderEntity.getCustomerId(),
+            "amount", orderEntity.getTotalAmount(),
+            "currency", orderEntity.getCurrency(),
+            "paymentToken", orderEntity.getPaymentToken()
+    );
 
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, causationId, mapPayload);
 
-    this.orderEventProducer.publish("payments-commands-topic", eventEnvelopeDto);
-  }
-
-  private Map<String, Object> buildMapPayload(OrderEntity orderEntity) {
-    return Map.of(
-        "customerId", orderEntity.getCustomerId(),
-        "amount", orderEntity.getTotalAmount(),
-        "currency", orderEntity.getCurrency(),
-        "paymentToken", orderEntity.getPaymentToken()
-    );
+    this.outboxEventService.enqueue("payments-commands-topic", eventEnvelopeDto);
   }
 
 }

@@ -1,17 +1,18 @@
-package com.z4greed.order.service.saga.purchase.strategy;
+package com.z4greed.order.strategy;
 
+import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.enums.EventTypeEnum;
-import com.z4greed.order.service.saga.purchase.strategy.impl.StockNotAvailableEventStrategy;
-import com.z4greed.order.service.saga.purchase.strategy.impl.StockReleasedEventStrategy;
-import com.z4greed.order.service.saga.purchase.strategy.impl.StockReservedEventStrategy;
+import com.z4greed.order.strategy.impl.StockNotAvailableEventStrategy;
+import com.z4greed.order.strategy.impl.StockReleasedEventStrategy;
+import com.z4greed.order.strategy.impl.StockReservedEventStrategy;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
-public class InventoryEventStrategyRegistry implements PurchaseSagaEventStrategyRegistry {
-  private final Map<EventTypeEnum, PurchaseSagaEventStrategy> mapEventStrategies;
+public class StockEventStrategyRegistry implements EventStrategyRegistry<EventTypeEnum, PurchaseSagaContextDto> {
+  private final Map<EventTypeEnum, EventStrategy<EventTypeEnum, PurchaseSagaContextDto>> mapEventStrategies;
 
-  public InventoryEventStrategyRegistry(
+  public StockEventStrategyRegistry(
       StockReservedEventStrategy stockReservedEventStrategy,
       StockNotAvailableEventStrategy stockNotAvailableEventStrategy,
       StockReleasedEventStrategy stockReleasedEventStrategy
@@ -24,7 +25,8 @@ public class InventoryEventStrategyRegistry implements PurchaseSagaEventStrategy
   }
 
   @Override
-  public PurchaseSagaEventStrategy find(EventTypeEnum eventTypeEnum) {
+  public EventStrategy<EventTypeEnum, PurchaseSagaContextDto> find(EventTypeEnum eventTypeEnum) {
     return this.mapEventStrategies.get(eventTypeEnum);
   }
+
 }

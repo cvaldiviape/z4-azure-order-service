@@ -1,20 +1,18 @@
-package com.z4greed.order.service.saga.purchase.strategy.impl;
+package com.z4greed.order.strategy.impl;
 
 import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
-import com.z4greed.order.service.saga.purchase.strategy.PurchaseSagaEventStrategy;
-import com.z4greed.order.service.saga.purchase.state.PurchaseSagaStateManager;
+import com.z4greed.order.strategy.EventStrategy;
+import com.z4greed.order.saga.state.PurchaseSagaStateManager;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaymentApprovedEventStrategy implements PurchaseSagaEventStrategy {
+public class PaymentApprovedEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
   private final PurchaseSagaStateManager purchaseSagaStateManager;
 
-  public PaymentApprovedEventStrategy(
-      PurchaseSagaStateManager purchaseSagaStateManager
-  ) {
+  public PaymentApprovedEventStrategy(PurchaseSagaStateManager purchaseSagaStateManager) {
     this.purchaseSagaStateManager = purchaseSagaStateManager;
   }
 

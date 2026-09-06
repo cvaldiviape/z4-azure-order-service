@@ -1,4 +1,4 @@
-package com.z4greed.order.service.order.impl;
+package com.z4greed.order.service.impl;
 
 import com.z4greed.order.dto.*;
 import com.z4greed.order.entity.*;
@@ -6,10 +6,10 @@ import com.z4greed.order.enums.*;
 import com.z4greed.order.exception.CustomBusinessException;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
-import com.z4greed.order.kafka.producer.OrderEventProducer;
 import com.z4greed.order.mapper.OrderMapper;
 import com.z4greed.order.repository.*;
-import com.z4greed.order.service.order.OrderService;
+import com.z4greed.order.service.OrderService;
+import com.z4greed.order.service.OutboxEventService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderServiceImpl implements OrderService {
   private final OrderRepository orderRepository;
   private final PurchaseSagaRepository purchaseSagaRepository;
-  private final OrderEventProducer orderEventProducer;
+  private final OutboxEventService outboxEventService;
   private final OrderMapper orderMapper;
   private final OrderEventFactory orderEventFactory;
   private final PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
@@ -32,14 +32,14 @@ public class OrderServiceImpl implements OrderService {
   public OrderServiceImpl(
       OrderRepository orderRepository,
       PurchaseSagaRepository purchaseSagaRepository,
-      OrderEventProducer orderEventProducer,
+      OutboxEventService outboxEventService,
       OrderMapper orderMapper,
       OrderEventFactory orderEventFactory,
       PurchaseSagaHistoryRepository purchaseSagaHistoryRepository
   ) {
     this.orderRepository = orderRepository;
     this.purchaseSagaRepository = purchaseSagaRepository;
-    this.orderEventProducer = orderEventProducer;
+    this.outboxEventService = outboxEventService;
     this.orderMapper = orderMapper;
     this.orderEventFactory = orderEventFactory;
     this.purchaseSagaHistoryRepository = purchaseSagaHistoryRepository;
@@ -150,7 +150,7 @@ public class OrderServiceImpl implements OrderService {
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, causationId, mapPayload);
 
-    this.orderEventProducer.publish("inventory-commands-topic", eventEnvelopeDto);
+    this.outboxEventService.enqueue("inventory-commands-topic", eventEnvelopeDto);
   }
 
   private Map<String, Object> buildMapPayload(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
@@ -165,8 +165,7 @@ public class OrderServiceImpl implements OrderService {
       );
   }
 
-  @Override
-  @Transactional(readOnly = true)
+  @Override @Transactional(readOnly = true)
   public OrderResponseDto get(Long orderId, Long customerId) {
     OrderEntity orderEntity = this.findOrder(orderId);
     this.validateOwnership(orderEntity, customerId);

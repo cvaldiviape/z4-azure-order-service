@@ -28,5 +28,10 @@ app:
     retry:
       interval-milliseconds: ${KAFKA_RETRY_INTERVAL_MILLISECONDS:2000} # Espera 2 segundos entre intentos.
       max-attempts: ${KAFKA_RETRY_MAX_ATTEMPTS:3} # Incluye el intento inicial: 1 inicial + 2 reintentos.
+  outbox:
+    batch-size: ${OUTBOX_BATCH_SIZE:100}
+    poll-interval-milliseconds: ${OUTBOX_POLL_INTERVAL_MILLISECONDS:1000}
+    initial-delay-milliseconds: ${OUTBOX_INITIAL_DELAY_MILLISECONDS:1000}
+    send-timeout-milliseconds: ${OUTBOX_SEND_TIMEOUT_MILLISECONDS:10000}
   jwt:
     secret: ${JWT_SECRET:change-me-change-me-change-me-32-bytes}

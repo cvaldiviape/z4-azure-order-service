@@ -5,13 +5,13 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
-@Table(name = "processed_events")
+@Table(name = "inbox_events")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ProcessedEventEntity {
+public class InboxEventEntity {
   @Id private String eventId;
   private String eventType;
   private LocalDateTime processedAt;

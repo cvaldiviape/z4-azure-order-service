@@ -1,4 +1,4 @@
-package com.z4greed.order.service.saga.purchase.state;
+package com.z4greed.order.saga.state;
 
 import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.entity.OrderEntity;

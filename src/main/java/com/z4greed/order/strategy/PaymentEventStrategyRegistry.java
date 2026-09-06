@@ -1,14 +1,15 @@
-package com.z4greed.order.service.saga.purchase.strategy;
+package com.z4greed.order.strategy;
 
+import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.enums.EventTypeEnum;
-import com.z4greed.order.service.saga.purchase.strategy.impl.PaymentApprovedEventStrategy;
-import com.z4greed.order.service.saga.purchase.strategy.impl.PaymentFailedEventStrategy;
+import com.z4greed.order.strategy.impl.PaymentApprovedEventStrategy;
+import com.z4greed.order.strategy.impl.PaymentFailedEventStrategy;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaymentEventStrategyRegistry implements PurchaseSagaEventStrategyRegistry {
-  private final Map<EventTypeEnum, PurchaseSagaEventStrategy> mapEventStrategies;
+public class PaymentEventStrategyRegistry implements EventStrategyRegistry<EventTypeEnum, PurchaseSagaContextDto> {
+  private final Map<EventTypeEnum, EventStrategy<EventTypeEnum, PurchaseSagaContextDto>> mapEventStrategies;
 
   public PaymentEventStrategyRegistry(
       PaymentApprovedEventStrategy paymentApprovedEventStrategy,
@@ -21,7 +22,8 @@ public class PaymentEventStrategyRegistry implements PurchaseSagaEventStrategyRe
   }
 
   @Override
-  public PurchaseSagaEventStrategy find(EventTypeEnum eventTypeEnum) {
+  public EventStrategy<EventTypeEnum, PurchaseSagaContextDto> find(EventTypeEnum eventTypeEnum) {
     return this.mapEventStrategies.get(eventTypeEnum);
   }
+
 }

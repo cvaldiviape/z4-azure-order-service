@@ -1,6 +1,6 @@
 package com.z4greed.order.kafka.consumer;
 
-import com.z4greed.order.service.saga.purchase.PurchaseSagaService;
+import com.z4greed.order.saga.PurchaseSagaService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -12,13 +12,13 @@ public class PurchaseSagaEventConsumer {
     this.purchaseSagaService = purchaseSagaService;
   }
 
-  // Permanece a la escucha de los eventos de inventario publicados en "inventory-events-topic".
+  // Permanece a la escucha de los eventos de inventario-service publicados en "inventory-events-topic".
   @KafkaListener(topics = "inventory-events-topic")
   public void consumeInventoryEvents(String rawEvent) {
     this.purchaseSagaService.handleInventoryEvent(rawEvent);
   }
 
-  // Permanece a la escucha de los eventos de pago publicados en "payments-events-topic".
+  // Permanece a la escucha de los eventos de payment-service publicados en "payments-events-topic".
   @KafkaListener(topics = "payments-events-topic")
   public void consumePaymentEvents(String rawEvent) {
     this.purchaseSagaService.handlePaymentEvent(rawEvent);

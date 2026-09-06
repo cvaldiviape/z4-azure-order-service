@@ -1,4 +1,4 @@
-package com.z4greed.order.service.saga.purchase;
+package com.z4greed.order.saga;
 
 public interface PurchaseSagaService {
   void handleInventoryEvent(String rawEvent);

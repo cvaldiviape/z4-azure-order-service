@@ -1,15 +1,15 @@
-package com.z4greed.order.service.order.impl;
+package com.z4greed.order.service.impl;
 
 import com.z4greed.order.dto.*;
 import com.z4greed.order.entity.*;
 import com.z4greed.order.enums.*;
-import com.z4greed.order.exception.GreedException;
+import com.z4greed.order.exception.CustomBusinessException;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
-import com.z4greed.order.kafka.producer.OrderEventProducer;
 import com.z4greed.order.mapper.OrderMapper;
 import com.z4greed.order.repository.*;
-import com.z4greed.order.service.order.OrderService;
+import com.z4greed.order.service.OrderService;
+import com.z4greed.order.service.OutboxEventService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderServiceImpl implements OrderService {
   private final OrderRepository orderRepository;
   private final PurchaseSagaRepository purchaseSagaRepository;
-  private final OrderEventProducer orderEventProducer;
+  private final OutboxEventService outboxEventService;
   private final OrderMapper orderMapper;
   private final OrderEventFactory orderEventFactory;
   private final PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
@@ -32,14 +32,14 @@ public class OrderServiceImpl implements OrderService {
   public OrderServiceImpl(
       OrderRepository orderRepository,
       PurchaseSagaRepository purchaseSagaRepository,
-      OrderEventProducer orderEventProducer,
+      OutboxEventService outboxEventService,
       OrderMapper orderMapper,
       OrderEventFactory orderEventFactory,
       PurchaseSagaHistoryRepository purchaseSagaHistoryRepository
   ) {
     this.orderRepository = orderRepository;
     this.purchaseSagaRepository = purchaseSagaRepository;
-    this.orderEventProducer = orderEventProducer;
+    this.outboxEventService = outboxEventService;
     this.orderMapper = orderMapper;
     this.orderEventFactory = orderEventFactory;
     this.purchaseSagaHistoryRepository = purchaseSagaHistoryRepository;
@@ -55,8 +55,7 @@ public class OrderServiceImpl implements OrderService {
     this.createPurchaseSagaHistory(orderEntity, orderCreatedEvent, savedPurchaseSagaEntity, createdAt);
     log.info("action=saga_started eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", orderCreatedEvent.eventType(), orderCreatedEvent.eventId(), orderCreatedEvent.correlationId(), orderEntity.getId(), orderEntity.getStatus(), savedPurchaseSagaEntity.getStatus());
 
-    EventEnvelopeDto reserveStockCommand = this.buildReserveStockCommand(orderEntity, requestDto, orderCreatedEvent.eventId());
-    this.publishReserveStock(reserveStockCommand);
+    this.publishReserveStock(orderCreatedEvent, orderEntity, requestDto);
     return this.orderMapper.toDto(orderEntity);
   }
 
@@ -146,13 +145,12 @@ public class OrderServiceImpl implements OrderService {
     return this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity, null, mapPayload);
   }
 
-  private EventEnvelopeDto buildReserveStockCommand(OrderEntity orderEntity, CreateOrderRequestDto requestDto, String causationId) {
+  private void publishReserveStock(EventEnvelopeDto orderCreatedEvent,  OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
+    String causationId = orderCreatedEvent.eventId();
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
-    return this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, causationId, mapPayload);
-  }
+    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, causationId, mapPayload);
 
-  private void publishReserveStock(EventEnvelopeDto eventEnvelopeDto) {
-    this.orderEventProducer.publish("inventory-commands-topic", eventEnvelopeDto);
+    this.outboxEventService.enqueue("inventory-commands-topic", eventEnvelopeDto);
   }
 
   private Map<String, Object> buildMapPayload(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
@@ -167,8 +165,7 @@ public class OrderServiceImpl implements OrderService {
       );
   }
 
-  @Override
-  @Transactional(readOnly = true)
+  @Override @Transactional(readOnly = true)
   public OrderResponseDto get(Long orderId, Long customerId) {
     OrderEntity orderEntity = this.findOrder(orderId);
     this.validateOwnership(orderEntity, customerId);
@@ -177,13 +174,13 @@ public class OrderServiceImpl implements OrderService {
 
   private OrderEntity findOrder(Long orderId) {
     return this.orderRepository.findById(orderId)
-        .orElseThrow(() -> new GreedException(ErrorCodeEnum.ORDER_NOT_FOUND));
+        .orElseThrow(() -> new CustomBusinessException(ErrorCodeEnum.ORDER_NOT_FOUND));
   }
 
   private void validateOwnership(OrderEntity orderEntity, Long customerId) {
     Long customerIdCurrent = orderEntity.getCustomerId();
     if (!customerIdCurrent.equals(customerId)) {
-      throw new GreedException(ErrorCodeEnum.ORDER_ACCESS_DENIED);
+      throw new CustomBusinessException(ErrorCodeEnum.ORDER_ACCESS_DENIED);
     }
   }
 

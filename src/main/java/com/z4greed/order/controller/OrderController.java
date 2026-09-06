@@ -1,7 +1,7 @@
 package com.z4greed.order.controller;
 
 import com.z4greed.order.dto.*;
-import com.z4greed.order.service.order.OrderService;
+import com.z4greed.order.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
   private final OrderService orderService;
 
-  public OrderController(
-      OrderService orderService) {
+  public OrderController(OrderService orderService) {
     this.orderService = orderService;
   }
 
@@ -23,6 +22,7 @@ public class OrderController {
   public ResponseDto<OrderResponseDto> create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateOrderRequestDto requestDto) {
     Long customerId = Long.valueOf(jwt.getSubject());
     OrderResponseDto orderResponseDto = this.orderService.create(customerId, requestDto);
+
     return ResponseDto.<OrderResponseDto>builder()
         .code("ORDER_CREATED")
         .statusCode(HttpStatus.CREATED.value())
@@ -35,6 +35,7 @@ public class OrderController {
   public ResponseDto<OrderResponseDto> get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
     Long customerId = Long.valueOf(jwt.getSubject());
     OrderResponseDto orderResponseDto = this.orderService.get(id, customerId);
+
     return ResponseDto.<OrderResponseDto>builder()
         .code("ORDER_FOUND")
         .statusCode(HttpStatus.OK.value())

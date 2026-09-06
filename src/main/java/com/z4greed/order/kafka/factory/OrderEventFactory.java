@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 public class OrderEventFactory {
   private static final Integer EVENT_VERSION = 1;
   private static final String PRODUCER = "order-service";
-
   private final ObjectMapper mapper;
 
   public OrderEventFactory(ObjectMapper mapper) {

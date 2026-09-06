@@ -1,4 +1,4 @@
-package com.z4greed.order.service.saga.purchase.strategy.impl;
+package com.z4greed.order.strategy.impl;
 
 import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.entity.OrderEntity;
@@ -6,26 +6,26 @@ import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
 import com.z4greed.order.kafka.event.EventEnvelopeDto;
-import com.z4greed.order.kafka.producer.OrderEventProducer;
-import com.z4greed.order.service.saga.purchase.strategy.PurchaseSagaEventStrategy;
-import com.z4greed.order.service.saga.purchase.state.PurchaseSagaStateManager;
+import com.z4greed.order.service.OutboxEventService;
+import com.z4greed.order.strategy.EventStrategy;
+import com.z4greed.order.saga.state.PurchaseSagaStateManager;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaymentFailedEventStrategy implements PurchaseSagaEventStrategy {
+public class PaymentFailedEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
   private final PurchaseSagaStateManager purchaseSagaStateManager;
   private final OrderEventFactory orderEventFactory;
-  private final OrderEventProducer orderEventProducer;
+  private final OutboxEventService outboxEventService;
 
   public PaymentFailedEventStrategy(
       PurchaseSagaStateManager purchaseSagaStateManager,
       OrderEventFactory orderEventFactory,
-      OrderEventProducer orderEventProducer
+      OutboxEventService outboxEventService
   ) {
     this.purchaseSagaStateManager = purchaseSagaStateManager;
     this.orderEventFactory = orderEventFactory;
-    this.orderEventProducer = orderEventProducer;
+    this.outboxEventService = outboxEventService;
   }
 
   @Override
@@ -43,7 +43,7 @@ public class PaymentFailedEventStrategy implements PurchaseSagaEventStrategy {
 
     EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RELEASE_STOCK, orderEntity, causationId, mapPayload);
 
-    this.orderEventProducer.publish("inventory-commands-topic", eventEnvelopeDto);
+    this.outboxEventService.enqueue("inventory-commands-topic", eventEnvelopeDto);
   }
 
 }

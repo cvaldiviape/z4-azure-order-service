@@ -32,14 +32,6 @@ public class PurchaseSagaStateManager {
     this.logSagaState(purchaseSagaContextDto, eventTypeEnum, orderEntity);
   }
 
-  private void clearPaymentTokenWhenNoLongerNeeded(OrderEntity orderEntity, SagaStatusEnum sagaStatusEnum) {
-    if (sagaStatusEnum == SagaStatusEnum.COMPLETED
-        || sagaStatusEnum == SagaStatusEnum.COMPENSATING
-        || sagaStatusEnum == SagaStatusEnum.FAILED) {
-      orderEntity.setPaymentToken(null);
-    }
-  }
-
   private void updateOrder(OrderEntity orderEntity, OrderStatusEnum orderStatusEnum, LocalDateTime updatedAt) {
     if (orderStatusEnum == null) {
       return;
@@ -56,6 +48,16 @@ public class PurchaseSagaStateManager {
     purchaseSagaEntity.setLastEventId(purchaseSagaContextDto.sourceEvent().eventId());
     purchaseSagaEntity.setErrorMessage(errorMessage);
     purchaseSagaEntity.setUpdatedAt(updatedAt);
+  }
+
+  private void clearPaymentTokenWhenNoLongerNeeded(OrderEntity orderEntity, SagaStatusEnum sagaStatusEnum) {
+    boolean isCompleted = sagaStatusEnum == SagaStatusEnum.COMPLETED;
+    boolean isCompesating = sagaStatusEnum == SagaStatusEnum.COMPENSATING;
+    boolean isFailed = sagaStatusEnum == SagaStatusEnum.FAILED;
+
+    if (isCompleted || isCompesating || isFailed) {
+      orderEntity.setPaymentToken(null);
+    }
   }
 
   private void createPurchaseSagaHistory(PurchaseSagaContextDto purchaseSagaContextDto, EventTypeEnum eventTypeEnum, OrderEntity orderEntity, LocalDateTime updatedAt) {

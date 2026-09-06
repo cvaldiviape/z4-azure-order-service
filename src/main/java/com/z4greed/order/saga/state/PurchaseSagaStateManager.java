@@ -33,7 +33,9 @@ public class PurchaseSagaStateManager {
   }
 
   private void clearPaymentTokenWhenNoLongerNeeded(OrderEntity orderEntity, SagaStatusEnum sagaStatusEnum) {
-    if (sagaStatusEnum == SagaStatusEnum.COMPLETED || sagaStatusEnum == SagaStatusEnum.COMPENSATING) {
+    if (sagaStatusEnum == SagaStatusEnum.COMPLETED
+        || sagaStatusEnum == SagaStatusEnum.COMPENSATING
+        || sagaStatusEnum == SagaStatusEnum.FAILED) {
       orderEntity.setPaymentToken(null);
     }
   }

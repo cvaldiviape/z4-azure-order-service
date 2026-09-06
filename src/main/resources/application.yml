@@ -33,5 +33,10 @@ app:
     poll-interval-milliseconds: ${OUTBOX_POLL_INTERVAL_MILLISECONDS:1000}
     initial-delay-milliseconds: ${OUTBOX_INITIAL_DELAY_MILLISECONDS:1000}
     send-timeout-milliseconds: ${OUTBOX_SEND_TIMEOUT_MILLISECONDS:10000}
+  saga:
+    timeout-milliseconds: ${SAGA_TIMEOUT_MILLISECONDS:300000}
+    timeout-batch-size: ${SAGA_TIMEOUT_BATCH_SIZE:100}
+    timeout-poll-interval-milliseconds: ${SAGA_TIMEOUT_POLL_INTERVAL_MILLISECONDS:30000}
+    timeout-initial-delay-milliseconds: ${SAGA_TIMEOUT_INITIAL_DELAY_MILLISECONDS:30000}
   jwt:
     secret: ${JWT_SECRET:change-me-change-me-change-me-32-bytes}

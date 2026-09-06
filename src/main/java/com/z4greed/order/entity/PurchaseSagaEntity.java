@@ -29,4 +29,7 @@ public class PurchaseSagaEntity {
   private String errorMessage;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+
+  @Version
+  private Long version;
 }

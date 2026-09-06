@@ -14,5 +14,10 @@ import lombok.*;
 public class InboxEventEntity {
   @Id private String eventId;
   private String eventType;
+  private String aggregateId;
+  private String correlationId;
+  private String causationId;
+  private String producer;
+  private String sourceTopic;
   private LocalDateTime processedAt;
 }

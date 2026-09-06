@@ -9,5 +9,5 @@ import org.mapstruct.*;
 public interface InboxEventMapper {
   @Named("InboxEventMapper.toEntity")
   @Mapping(target = "processedAt", expression = "java(LocalDateTime.now())")
-  InboxEventEntity toEntity(EventEnvelopeDto eventEnvelopeDto);
+  InboxEventEntity toEntity(EventEnvelopeDto eventEnvelopeDto, String sourceTopic);
 }

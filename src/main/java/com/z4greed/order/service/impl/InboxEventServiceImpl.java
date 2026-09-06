@@ -22,8 +22,8 @@ public class InboxEventServiceImpl implements InboxEventService {
   public boolean wasAlreadyProcessed(String eventId) { return this.inboxEventRepository.existsById(eventId); }
 
   @Override @Transactional
-  public void register(EventEnvelopeDto event) {
-    InboxEventEntity inboxEvent = this.inboxEventMapper.toEntity(event);
+  public void register(EventEnvelopeDto event, String sourceTopic) {
+    InboxEventEntity inboxEvent = this.inboxEventMapper.toEntity(event, sourceTopic);
     this.inboxEventRepository.save(inboxEvent);
   }
 

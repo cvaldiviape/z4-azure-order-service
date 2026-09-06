@@ -27,8 +27,15 @@ public class PurchaseSagaStateManager {
 
     this.updateOrder(orderEntity, orderStatusEnum, updatedAt);
     this.updateSaga(purchaseSagaContextDto, sagaStatusEnum, eventTypeEnum, errorMessage, updatedAt);
+    this.clearPaymentTokenWhenNoLongerNeeded(orderEntity, sagaStatusEnum);
     this.createPurchaseSagaHistory(purchaseSagaContextDto, eventTypeEnum, orderEntity, updatedAt);
     this.logSagaState(purchaseSagaContextDto, eventTypeEnum, orderEntity);
+  }
+
+  private void clearPaymentTokenWhenNoLongerNeeded(OrderEntity orderEntity, SagaStatusEnum sagaStatusEnum) {
+    if (sagaStatusEnum == SagaStatusEnum.COMPLETED || sagaStatusEnum == SagaStatusEnum.COMPENSATING) {
+      orderEntity.setPaymentToken(null);
+    }
   }
 
   private void updateOrder(OrderEntity orderEntity, OrderStatusEnum orderStatusEnum, LocalDateTime updatedAt) {

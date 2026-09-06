@@ -70,7 +70,7 @@ public class PurchaseSagaServiceImpl implements PurchaseSagaService {
       PurchaseSagaContextDto purchaseSagaContextDto = this.loadSagaContext(eventEnvelopeDto);
 
       eventStrategy.execute(purchaseSagaContextDto);
-      this.inboxEventService.register(eventEnvelopeDto);
+      this.inboxEventService.register(eventEnvelopeDto, "inventory-events-topic");
 
       log.info("action=event_processed sourceTopic=inventory-events-topic eventType={} eventId={} correlationId={} orderId={}", eventType, eventId, correlationId, aggregateId);
     } catch (RuntimeException exception) {
@@ -104,7 +104,7 @@ public class PurchaseSagaServiceImpl implements PurchaseSagaService {
       PurchaseSagaContextDto purchaseSagaContextDto = this.loadSagaContext(eventEnvelopeDto);
 
       eventStrategy.execute(purchaseSagaContextDto);
-      this.inboxEventService.register(eventEnvelopeDto);
+      this.inboxEventService.register(eventEnvelopeDto, "payments-events-topic");
       log.info("action=event_processed sourceTopic=payments-events-topic eventType={} eventId={} correlationId={} orderId={}", eventType, eventId, correlationId, aggregateId);
     } catch (RuntimeException exception) {
       String simpleName = exception.getClass().getSimpleName();

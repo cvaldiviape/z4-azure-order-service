@@ -1,7 +1,7 @@
 package com.z4greed.order.service.impl;
 
 import com.z4greed.order.entity.InboxEventEntity;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import com.z4greed.order.mapper.InboxEventMapper;
 import com.z4greed.order.repository.InboxEventRepository;
 import com.z4greed.order.service.InboxEventService;
@@ -22,7 +22,7 @@ public class InboxEventServiceImpl implements InboxEventService {
   public boolean wasAlreadyProcessed(String eventId) { return this.inboxEventRepository.existsById(eventId); }
 
   @Override @Transactional
-  public void register(EventEnvelopeDto event, String sourceTopic) {
+  public void register(IntegrationEventDto event, String sourceTopic) {
     InboxEventEntity inboxEvent = this.inboxEventMapper.toEntity(event, sourceTopic);
     this.inboxEventRepository.save(inboxEvent);
   }

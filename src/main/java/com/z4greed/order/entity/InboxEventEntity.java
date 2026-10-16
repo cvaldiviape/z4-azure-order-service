@@ -16,7 +16,7 @@ public class InboxEventEntity {
   private String eventType;
   private String aggregateId;
   private String correlationId;
-  private String causationId;
+  private String previousEventId;
   private String producer;
   private String sourceTopic;
   private LocalDateTime processedAt;

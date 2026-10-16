@@ -6,7 +6,7 @@ import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import com.z4greed.order.service.OutboxEventService;
 import com.z4greed.order.strategy.EventStrategy;
 import com.z4greed.order.saga.state.PurchaseSagaStateManager;
@@ -41,14 +41,14 @@ public class StockReleasedEventStrategy implements EventStrategy<EventTypeEnum, 
     this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED, EventTypeEnum.ORDER_CANCELLED, CANCELLATION_REASON);
 
     OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
-    String causationId = purchaseSagaContextDto.sourceEvent().eventId();
+    String previousEventId = purchaseSagaContextDto.event().eventId();
     Map<String, Object> mapPayload = Map.of(
             "reason", CANCELLATION_REASON
     );
 
-    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.ORDER_CANCELLED, orderEntity, causationId, mapPayload);
+    IntegrationEventDto orderCancelledEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CANCELLED, orderEntity, previousEventId, mapPayload);
 
-    this.outboxEventService.enqueue("orders-events-topic", eventEnvelopeDto);
+    this.outboxEventService.enqueue("order-status-events-topic", orderCancelledEvent);
   }
 
 }

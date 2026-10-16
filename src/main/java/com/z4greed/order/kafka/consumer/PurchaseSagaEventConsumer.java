@@ -12,14 +12,14 @@ public class PurchaseSagaEventConsumer {
     this.purchaseSagaService = purchaseSagaService;
   }
 
-  // Permanece a la escucha de los eventos de inventario-service publicados en "inventory-events-topic".
-  @KafkaListener(topics = "inventory-events-topic")
+  // Permanece a la escucha de los resultados de reserva publicados por inventory-service.
+  @KafkaListener(topics = "inventory-reservation-results-topic")
   public void consumeInventoryEvents(String rawEvent) {
     this.purchaseSagaService.handleInventoryEvent(rawEvent);
   }
 
-  // Permanece a la escucha de los eventos de payment-service publicados en "payments-events-topic".
-  @KafkaListener(topics = "payments-events-topic")
+  // Permanece a la escucha de los resultados de pago publicados por payment-service.
+  @KafkaListener(topics = "payment-processing-results-topic")
   public void consumePaymentEvents(String rawEvent) {
     this.purchaseSagaService.handlePaymentEvent(rawEvent);
   }

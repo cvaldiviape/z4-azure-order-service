@@ -5,13 +5,13 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 
 @Builder
-public record EventEnvelopeDto(
+public record IntegrationEventDto(
     String eventId,
     String eventType,
     Integer eventVersion,
     String aggregateId,
     String correlationId,
-    String causationId,
+    String previousEventId,
     LocalDateTime timestamp,
     String producer,
     JsonNode payload) {}

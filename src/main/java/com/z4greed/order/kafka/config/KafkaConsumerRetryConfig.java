@@ -62,7 +62,7 @@ public class KafkaConsumerRetryConfig {
   }
 
   // Obtiene dinámicamente el topic donde llegó el mensaje y le agrega el sufijo "-dlt".
-  // Ejemplo: inventory-events-topic se convierte en inventory-events-topic-dlt y conserva la partición.
+  // Ejemplo: inventory-reservation-results-topic se convierte en inventory-reservation-results-topic-dlt y conserva la partición.
   private TopicPartition resolveDeadLetterDestination(ConsumerRecord<?, ?> consumerRecord, Exception exception) {
     String deadLetterTopic = consumerRecord.topic() + DLT_SUFFIX;
     String exceptionType = exception.getClass().getSimpleName();
@@ -81,14 +81,14 @@ public class KafkaConsumerRetryConfig {
   // Declara los DLT correspondientes a los topics que consume Order Service.
   // Los reintentos no crean otros topics: DefaultErrorHandler vuelve a procesar el mensaje en su
   // topic de origen. Solo después de agotar los intentos lo publica en el DLT correspondiente.
-  // La relación es por nombre: inventory-events-topic + "-dlt" y payments-events-topic + "-dlt".
+  // La relación es por nombre: inventory-reservation-results-topic + "-dlt" y payment-processing-results-topic + "-dlt".
   @Bean
   public NewTopics purchaseSagaDeadLetterTopics() {
-    NewTopic newTopic1 = TopicBuilder.name("inventory-events-topic-dlt")
+    NewTopic newTopic1 = TopicBuilder.name("inventory-reservation-results-topic-dlt")
             .partitions(1)
             .replicas(1)
             .build();
-    NewTopic newTopic2 = TopicBuilder.name("payments-events-topic-dlt")
+    NewTopic newTopic2 = TopicBuilder.name("payment-processing-results-topic-dlt")
             .partitions(1)
             .replicas(1)
             .build();

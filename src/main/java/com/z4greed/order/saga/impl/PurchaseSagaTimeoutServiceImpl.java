@@ -47,10 +47,9 @@ public class PurchaseSagaTimeoutServiceImpl implements PurchaseSagaTimeoutServic
     OrderEntity orderEntity = purchaseSagaEntity.getOrder();
 
     purchaseSagaEntity.setStatus(SagaStatusEnum.TIMED_OUT);
-    purchaseSagaEntity.setCurrentStep(EventTypeEnum.SAGA_TIMED_OUT.getValue());
-    purchaseSagaEntity.setLastEventId(timeoutEventId);
     purchaseSagaEntity.setErrorMessage(errorMessage);
     purchaseSagaEntity.setUpdatedAt(timedOutAt);
+    purchaseSagaEntity.setTimedOutAt(timedOutAt);
 
     PurchaseSagaHistoryEntity historyEntity = PurchaseSagaHistoryEntity.builder()
         .purchaseSaga(purchaseSagaEntity)

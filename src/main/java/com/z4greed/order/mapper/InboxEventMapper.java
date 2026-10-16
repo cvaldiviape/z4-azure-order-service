@@ -1,7 +1,7 @@
 package com.z4greed.order.mapper;
 
 import com.z4greed.order.entity.InboxEventEntity;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import java.time.LocalDateTime;
 import org.mapstruct.*;
 
@@ -9,5 +9,5 @@ import org.mapstruct.*;
 public interface InboxEventMapper {
   @Named("InboxEventMapper.toEntity")
   @Mapping(target = "processedAt", expression = "java(LocalDateTime.now())")
-  InboxEventEntity toEntity(EventEnvelopeDto eventEnvelopeDto, String sourceTopic);
+  InboxEventEntity toEntity(IntegrationEventDto event, String sourceTopic);
 }

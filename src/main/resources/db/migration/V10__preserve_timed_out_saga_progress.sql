@@ -1,0 +1,2 @@
+ALTER TABLE purchase_sagas
+    ADD COLUMN timed_out_at TIMESTAMP WITHOUT TIME ZONE;

@@ -41,6 +41,7 @@ class PurchaseSagaTimeoutServiceImplTests {
         .order(orderEntity)
         .status(SagaStatusEnum.IN_PROGRESS)
         .currentStep(EventTypeEnum.STOCK_RESERVED.getValue())
+        .lastEventId("stock-reserved-event-id")
         .build();
 
     when(this.purchaseSagaRepository.findStaleForUpdate(cutoff, 100)).thenReturn(List.of(sagaEntity));
@@ -49,8 +50,10 @@ class PurchaseSagaTimeoutServiceImplTests {
 
     assertThat(result).isEqualTo(1);
     assertThat(sagaEntity.getStatus()).isEqualTo(SagaStatusEnum.TIMED_OUT);
-    assertThat(sagaEntity.getCurrentStep()).isEqualTo(EventTypeEnum.SAGA_TIMED_OUT.getValue());
+    assertThat(sagaEntity.getCurrentStep()).isEqualTo(EventTypeEnum.STOCK_RESERVED.getValue());
+    assertThat(sagaEntity.getLastEventId()).isEqualTo("stock-reserved-event-id");
     assertThat(sagaEntity.getErrorMessage()).contains(EventTypeEnum.STOCK_RESERVED.getValue());
+    assertThat(sagaEntity.getTimedOutAt()).isNotNull();
     assertThat(orderEntity.getStatus()).isEqualTo(OrderStatusEnum.PAYMENT_PENDING);
     assertThat(orderEntity.getPaymentToken()).isEqualTo("temporary-token");
 

@@ -5,7 +5,7 @@ import com.z4greed.order.entity.*;
 import com.z4greed.order.enums.*;
 import com.z4greed.order.exception.CustomBusinessException;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import com.z4greed.order.mapper.OrderMapper;
 import com.z4greed.order.repository.*;
 import com.z4greed.order.service.OrderService;
@@ -48,12 +48,12 @@ public class OrderServiceImpl implements OrderService {
   @Override
   public OrderResponseDto create(Long customerId, CreateOrderRequestDto requestDto) {
     OrderEntity orderEntity = this.createOrder(customerId, requestDto);
-    EventEnvelopeDto orderCreatedEvent = this.buildOrderCreatedEvent(orderEntity);
+    IntegrationEventDto orderCreatedEvent = this.buildOrderCreatedEvent(orderEntity);
 
     LocalDateTime createdAt = LocalDateTime.now();
-    PurchaseSagaEntity savedPurchaseSagaEntity = this.createPurchaseSaga(orderEntity, orderCreatedEvent, createdAt);
-    this.createPurchaseSagaHistory(orderEntity, orderCreatedEvent, savedPurchaseSagaEntity, createdAt);
-    log.info("action=saga_started eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", orderCreatedEvent.eventType(), orderCreatedEvent.eventId(), orderCreatedEvent.correlationId(), orderEntity.getId(), orderEntity.getStatus(), savedPurchaseSagaEntity.getStatus());
+    PurchaseSagaEntity purchaseSagaEntity = this.createPurchaseSaga(orderEntity, orderCreatedEvent, createdAt);
+    this.createPurchaseSagaHistory(orderEntity, orderCreatedEvent, purchaseSagaEntity, createdAt);
+    log.info("action=saga_started eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", orderCreatedEvent.eventType(), orderCreatedEvent.eventId(), orderCreatedEvent.correlationId(), orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus());
 
     this.publishReserveStock(orderCreatedEvent, orderEntity, requestDto);
     return this.orderMapper.toDto(orderEntity);
@@ -113,44 +113,44 @@ public class OrderServiceImpl implements OrderService {
     return unitPrice.multiply(BigDecimal.valueOf(quantity));
   }
 
-  private PurchaseSagaEntity createPurchaseSaga(OrderEntity orderEntity, EventEnvelopeDto eventEnvelopeDto, LocalDateTime createdAt) {
+  private PurchaseSagaEntity createPurchaseSaga(OrderEntity orderEntity, IntegrationEventDto event, LocalDateTime createdAt) {
     PurchaseSagaEntity purchaseSagaEntity = PurchaseSagaEntity.builder()
         .order(orderEntity)
         .status(SagaStatusEnum.STARTED)
         .currentStep(EventTypeEnum.ORDER_CREATED.getValue())
-        .lastEventId(eventEnvelopeDto.eventId())
+        .lastEventId(event.eventId())
         .createdAt(createdAt)
         .build();
 
       return this.purchaseSagaRepository.save(purchaseSagaEntity);
   }
 
-  private void createPurchaseSagaHistory(OrderEntity orderEntity, EventEnvelopeDto eventEnvelopeDto, PurchaseSagaEntity savedPurchaseSagaEntity, LocalDateTime createdAt) {
+  private void createPurchaseSagaHistory(OrderEntity orderEntity, IntegrationEventDto event, PurchaseSagaEntity purchaseSagaEntity, LocalDateTime createdAt) {
     PurchaseSagaHistoryEntity purchaseSagaHistoryEntity = PurchaseSagaHistoryEntity.builder()
-        .purchaseSaga(savedPurchaseSagaEntity)
+        .purchaseSaga(purchaseSagaEntity)
         .orderId(orderEntity.getId())
         .orderStatus(orderEntity.getStatus())
-        .sagaStatus(savedPurchaseSagaEntity.getStatus())
+        .sagaStatus(purchaseSagaEntity.getStatus())
         .eventType(EventTypeEnum.ORDER_CREATED)
-        .eventId(eventEnvelopeDto.eventId())
-        .errorMessage(savedPurchaseSagaEntity.getErrorMessage())
+        .eventId(event.eventId())
+        .errorMessage(purchaseSagaEntity.getErrorMessage())
         .createdAt(createdAt)
         .build();
 
     this.purchaseSagaHistoryRepository.save(purchaseSagaHistoryEntity);
   }
 
-  private EventEnvelopeDto buildOrderCreatedEvent(OrderEntity orderEntity) {
+  private IntegrationEventDto buildOrderCreatedEvent(OrderEntity orderEntity) {
     Map<String, Object> mapPayload = Map.of();
     return this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity, null, mapPayload);
   }
 
-  private void publishReserveStock(EventEnvelopeDto orderCreatedEvent,  OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
-    String causationId = orderCreatedEvent.eventId();
+  private void publishReserveStock(IntegrationEventDto orderCreatedEvent,  OrderEntity orderEntity, CreateOrderRequestDto requestDto) {
+    String previousEventId = orderCreatedEvent.eventId();
     Map<String, Object> mapPayload = this.buildMapPayload(orderEntity, requestDto);
-    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, causationId, mapPayload);
+    IntegrationEventDto reserveStockEvent = this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, previousEventId, mapPayload);
 
-    this.outboxEventService.enqueue("inventory-commands-topic", eventEnvelopeDto);
+    this.outboxEventService.enqueue("inventory-reservation-requests-topic", reserveStockEvent);
   }
 
   private Map<String, Object> buildMapPayload(OrderEntity orderEntity, CreateOrderRequestDto requestDto) {

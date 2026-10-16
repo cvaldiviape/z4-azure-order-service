@@ -4,7 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.enums.EventTypeEnum;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -19,19 +19,19 @@ public class OrderEventFactory {
     this.mapper = mapper;
   }
 
-  public EventEnvelopeDto build(EventTypeEnum eventTypeEnum, OrderEntity orderEntity, String causationId, Object payload) {
+  public IntegrationEventDto build(EventTypeEnum eventTypeEnum, OrderEntity orderEntity, String previousEventId, Object payload) {
     String eventId = UUID.randomUUID().toString();
     String aggregateId = orderEntity.getId().toString();
     String correlationId = orderEntity.getCorrelationId();
     JsonNode payloadNode = this.mapper.valueToTree(payload);
 
-    return EventEnvelopeDto.builder()
+    return IntegrationEventDto.builder()
         .eventId(eventId)
         .eventType(eventTypeEnum.getValue())
         .eventVersion(EVENT_VERSION)
         .aggregateId(aggregateId)
         .correlationId(correlationId)
-        .causationId(causationId)
+        .previousEventId(previousEventId)
         .timestamp(LocalDateTime.now())
         .producer(PRODUCER)
         .payload(payloadNode)

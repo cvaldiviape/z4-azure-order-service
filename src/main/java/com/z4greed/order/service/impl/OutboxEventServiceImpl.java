@@ -3,7 +3,7 @@ package com.z4greed.order.service.impl;
 import com.z4greed.order.entity.OutboxEventEntity;
 import com.z4greed.order.enums.*;
 import com.z4greed.order.exception.CustomNonRetryableKafkaException;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import com.z4greed.order.repository.OutboxEventRepository;
 import com.z4greed.order.service.OutboxEventService;
 import java.time.LocalDateTime;
@@ -26,15 +26,16 @@ public class OutboxEventServiceImpl implements OutboxEventService {
   }
 
   @Override @Transactional
-  public void enqueue(String topic, EventEnvelopeDto eventEnvelopeDto) {
-    String payload = this.serialize(eventEnvelopeDto);
+  public void enqueue(String topic, IntegrationEventDto event) {
+    String payload = this.serialize(event);
 
     OutboxEventEntity outboxEventEntity = OutboxEventEntity.builder()
-            .eventId(eventEnvelopeDto.eventId())
-            .aggregateId(eventEnvelopeDto.aggregateId())
-            .correlationId(eventEnvelopeDto.correlationId())
-            .eventType(eventEnvelopeDto.eventType())
-            .topic(topic).eventKey(eventEnvelopeDto.aggregateId())
+            .eventId(event.eventId())
+            .aggregateId(event.aggregateId())
+            .correlationId(event.correlationId())
+            .eventType(event.eventType())
+            .topic(topic)
+            .eventKey(event.aggregateId())
             .payload(payload)
             .status(OutboxStatusEnum.PENDING)
             .attempts(0).createdAt(LocalDateTime.now())
@@ -43,8 +44,8 @@ public class OutboxEventServiceImpl implements OutboxEventService {
     this.outboxEventRepository.save(outboxEventEntity);
   }
 
-  private String serialize(EventEnvelopeDto eventEnvelopeDto) {
-    try { return this.mapper.writeValueAsString(eventEnvelopeDto); }
+  private String serialize(IntegrationEventDto event) {
+    try { return this.mapper.writeValueAsString(event); }
     catch (Exception exception) {
       throw new CustomNonRetryableKafkaException(ErrorCodeEnum.OUTBOX_SERIALIZATION_FAILED, exception);
     }

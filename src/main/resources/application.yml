@@ -13,7 +13,7 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}  # Dirección del broker. La variable permite sobrescribir localhost en otros entornos.
     consumer:
-      group-id: purchase-saga-consumer-group-id # Grupo suscriptor de la Saga para las respuestas de inventory-events-topic y payments-events-topic.
+      group-id: purchase-saga-consumer-group-id # Grupo suscriptor de la Saga para inventory-reservation-results-topic y payment-processing-results-topic.
       auto-offset-reset: earliest # Si el grupo no tiene un offset guardado, comienza desde el mensaje más antiguo.
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # Los eventos se reciben como texto porque el proyecto deserializa el JSON manualmente.
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -33,5 +33,10 @@ app:
     poll-interval-milliseconds: ${OUTBOX_POLL_INTERVAL_MILLISECONDS:1000}
     initial-delay-milliseconds: ${OUTBOX_INITIAL_DELAY_MILLISECONDS:1000}
     send-timeout-milliseconds: ${OUTBOX_SEND_TIMEOUT_MILLISECONDS:10000}
+  saga:
+    timeout-milliseconds: ${SAGA_TIMEOUT_MILLISECONDS:300000}
+    timeout-batch-size: ${SAGA_TIMEOUT_BATCH_SIZE:100}
+    timeout-poll-interval-milliseconds: ${SAGA_TIMEOUT_POLL_INTERVAL_MILLISECONDS:30000}
+    timeout-initial-delay-milliseconds: ${SAGA_TIMEOUT_INITIAL_DELAY_MILLISECONDS:30000}
   jwt:
     secret: ${JWT_SECRET:change-me-change-me-change-me-32-bytes}

@@ -6,7 +6,7 @@ import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import com.z4greed.order.service.OutboxEventService;
 import com.z4greed.order.strategy.EventStrategy;
 import com.z4greed.order.saga.state.PurchaseSagaStateManager;
@@ -39,7 +39,7 @@ public class StockReservedEventStrategy implements EventStrategy<EventTypeEnum, 
     this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.PAYMENT_PENDING, SagaStatusEnum.IN_PROGRESS, EventTypeEnum.STOCK_RESERVED, null);
 
     OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
-    String causationId = purchaseSagaContextDto.sourceEvent().eventId();
+    String previousEventId = purchaseSagaContextDto.event().eventId();
     Map<String, Object> mapPayload =  Map.of(
             "customerId", orderEntity.getCustomerId(),
             "amount", orderEntity.getTotalAmount(),
@@ -47,9 +47,9 @@ public class StockReservedEventStrategy implements EventStrategy<EventTypeEnum, 
             "paymentToken", orderEntity.getPaymentToken()
     );
 
-    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, causationId, mapPayload);
+    IntegrationEventDto paymentRequestedEvent = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, previousEventId, mapPayload);
 
-    this.outboxEventService.enqueue("payments-commands-topic", eventEnvelopeDto);
+    this.outboxEventService.enqueue("payment-processing-requests-topic", paymentRequestedEvent);
   }
 
 }

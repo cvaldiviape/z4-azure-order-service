@@ -5,7 +5,7 @@ import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
-import com.z4greed.order.kafka.event.EventEnvelopeDto;
+import com.z4greed.order.kafka.event.IntegrationEventDto;
 import com.z4greed.order.service.OutboxEventService;
 import com.z4greed.order.strategy.EventStrategy;
 import com.z4greed.order.saga.state.PurchaseSagaStateManager;
@@ -38,12 +38,12 @@ public class PaymentFailedEventStrategy implements EventStrategy<EventTypeEnum, 
     this.purchaseSagaStateManager.update(purchaseSagaContextDto, null, SagaStatusEnum.COMPENSATING, EventTypeEnum.PAYMENT_FAILED, null);
 
     OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
-    String causationId = purchaseSagaContextDto.sourceEvent().eventId();
+    String previousEventId = purchaseSagaContextDto.event().eventId();
     Map<String, Object> mapPayload = Map.of();
 
-    EventEnvelopeDto eventEnvelopeDto = this.orderEventFactory.build(EventTypeEnum.RELEASE_STOCK, orderEntity, causationId, mapPayload);
+    IntegrationEventDto releaseStockEvent = this.orderEventFactory.build(EventTypeEnum.RELEASE_STOCK, orderEntity, previousEventId, mapPayload);
 
-    this.outboxEventService.enqueue("inventory-commands-topic", eventEnvelopeDto);
+    this.outboxEventService.enqueue("inventory-reservation-requests-topic", releaseStockEvent);
   }
 
 }

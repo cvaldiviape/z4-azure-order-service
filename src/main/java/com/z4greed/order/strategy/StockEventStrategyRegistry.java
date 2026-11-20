@@ -10,23 +10,23 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StockEventStrategyRegistry implements EventStrategyRegistry<EventTypeEnum, PurchaseSagaContextDto> {
-  private final Map<EventTypeEnum, EventStrategy<EventTypeEnum, PurchaseSagaContextDto>> mapEventStrategies;
+    private final Map<EventTypeEnum, EventStrategy<EventTypeEnum, PurchaseSagaContextDto>> mapEventStrategies;
 
-  public StockEventStrategyRegistry(
-      StockReservedEventStrategy stockReservedEventStrategy,
-      StockNotAvailableEventStrategy stockNotAvailableEventStrategy,
-      StockReleasedEventStrategy stockReleasedEventStrategy
-  ) {
-    this.mapEventStrategies = Map.of(
-        EventTypeEnum.STOCK_RESERVED, stockReservedEventStrategy,
-        EventTypeEnum.STOCK_NOT_AVAILABLE, stockNotAvailableEventStrategy,
-        EventTypeEnum.STOCK_RELEASED, stockReleasedEventStrategy
-    );
-  }
+    public StockEventStrategyRegistry(
+            StockReservedEventStrategy stockReservedEventStrategy,
+            StockNotAvailableEventStrategy stockNotAvailableEventStrategy,
+            StockReleasedEventStrategy stockReleasedEventStrategy
+    ) {
+        this.mapEventStrategies = Map.of(
+                EventTypeEnum.STOCK_RESERVED, stockReservedEventStrategy,
+                EventTypeEnum.STOCK_NOT_AVAILABLE, stockNotAvailableEventStrategy,
+                EventTypeEnum.STOCK_RELEASED, stockReleasedEventStrategy
+        );
+    }
 
-  @Override
-  public EventStrategy<EventTypeEnum, PurchaseSagaContextDto> find(EventTypeEnum eventTypeEnum) {
-    return this.mapEventStrategies.get(eventTypeEnum);
-  }
+    @Override
+    public EventStrategy<EventTypeEnum, PurchaseSagaContextDto> find(EventTypeEnum eventTypeEnum) {
+        return this.mapEventStrategies.get(eventTypeEnum);
+    }
 
 }

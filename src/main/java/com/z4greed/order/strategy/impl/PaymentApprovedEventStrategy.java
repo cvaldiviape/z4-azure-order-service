@@ -10,20 +10,20 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentApprovedEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
-  private final PurchaseSagaStateManager purchaseSagaStateManager;
+    private final PurchaseSagaStateManager purchaseSagaStateManager;
 
-  public PaymentApprovedEventStrategy(PurchaseSagaStateManager purchaseSagaStateManager) {
-    this.purchaseSagaStateManager = purchaseSagaStateManager;
-  }
+    public PaymentApprovedEventStrategy(PurchaseSagaStateManager purchaseSagaStateManager) {
+        this.purchaseSagaStateManager = purchaseSagaStateManager;
+    }
 
-  @Override
-  public EventTypeEnum getEventType() {
-    return EventTypeEnum.PAYMENT_APPROVED;
-  }
+    @Override
+    public EventTypeEnum getEventType() {
+        return EventTypeEnum.PAYMENT_APPROVED;
+    }
 
-  @Override
-  public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
-    this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CONFIRMED, SagaStatusEnum.COMPLETED, EventTypeEnum.PAYMENT_APPROVED, null);
-  }
+    @Override
+    public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
+        this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CONFIRMED, SagaStatusEnum.COMPLETED, EventTypeEnum.PAYMENT_APPROVED, null);
+    }
 
 }

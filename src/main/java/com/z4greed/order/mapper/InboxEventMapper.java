@@ -7,7 +7,7 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING, imports = LocalDateTime.class)
 public interface InboxEventMapper {
-  @Named("InboxEventMapper.toEntity")
-  @Mapping(target = "processedAt", expression = "java(LocalDateTime.now())")
-  InboxEventEntity toEntity(IntegrationEventDto event, String sourceTopic);
+    @Named("InboxEventMapper.toEntity")
+    @Mapping(target = "processedAt", expression = "java(LocalDateTime.now())")
+    InboxEventEntity toEntity(IntegrationEventDto event, String sourceTopic);
 }

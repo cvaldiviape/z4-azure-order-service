@@ -15,41 +15,41 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StockReservedEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
-  private final PurchaseSagaStateManager purchaseSagaStateManager;
-  private final OrderEventFactory orderEventFactory;
-  private final OutboxEventService outboxEventService;
+    private final PurchaseSagaStateManager purchaseSagaStateManager;
+    private final OrderEventFactory orderEventFactory;
+    private final OutboxEventService outboxEventService;
 
-  public StockReservedEventStrategy(
-      PurchaseSagaStateManager purchaseSagaStateManager,
-      OrderEventFactory orderEventFactory,
-      OutboxEventService outboxEventService
-  ) {
-    this.purchaseSagaStateManager = purchaseSagaStateManager;
-    this.orderEventFactory = orderEventFactory;
-    this.outboxEventService = outboxEventService;
-  }
+    public StockReservedEventStrategy(
+            PurchaseSagaStateManager purchaseSagaStateManager,
+            OrderEventFactory orderEventFactory,
+            OutboxEventService outboxEventService
+    ) {
+        this.purchaseSagaStateManager = purchaseSagaStateManager;
+        this.orderEventFactory = orderEventFactory;
+        this.outboxEventService = outboxEventService;
+    }
 
-  @Override
-  public EventTypeEnum getEventType() {
-    return EventTypeEnum.STOCK_RESERVED;
-  }
+    @Override
+    public EventTypeEnum getEventType() {
+        return EventTypeEnum.STOCK_RESERVED;
+    }
 
-  @Override
-  public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
-    this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.PAYMENT_PENDING, SagaStatusEnum.IN_PROGRESS, EventTypeEnum.STOCK_RESERVED, null);
+    @Override
+    public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
+        this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.PAYMENT_PENDING, SagaStatusEnum.IN_PROGRESS, EventTypeEnum.STOCK_RESERVED, null);
 
-    OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
-    String previousEventId = purchaseSagaContextDto.event().eventId();
-    Map<String, Object> mapPayload =  Map.of(
-            "customerId", orderEntity.getCustomerId(),
-            "amount", orderEntity.getTotalAmount(),
-            "currency", orderEntity.getCurrency(),
-            "paymentToken", orderEntity.getPaymentToken()
-    );
+        OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
+        String previousEventId = purchaseSagaContextDto.event().eventId();
+        Map<String, Object> mapPayload =  Map.of(
+                        "customerId", orderEntity.getCustomerId(),
+                        "amount", orderEntity.getTotalAmount(),
+                        "currency", orderEntity.getCurrency(),
+                        "paymentToken", orderEntity.getPaymentToken()
+        );
 
-    IntegrationEventDto paymentRequestedEvent = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, previousEventId, mapPayload);
+        IntegrationEventDto paymentRequestedEvent = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, previousEventId, mapPayload);
 
-    this.outboxEventService.enqueue("payment-processing-requests-topic", paymentRequestedEvent);
-  }
+        this.outboxEventService.enqueue("payment-processing-requests-topic", paymentRequestedEvent);
+    }
 
 }

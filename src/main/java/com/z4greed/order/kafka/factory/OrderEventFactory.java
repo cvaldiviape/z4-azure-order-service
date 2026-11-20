@@ -11,31 +11,31 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class OrderEventFactory {
-  private static final Integer EVENT_VERSION = 1;
-  private static final String PRODUCER = "order-service";
-  private final ObjectMapper mapper;
+    private static final Integer EVENT_VERSION = 1;
+    private static final String PRODUCER = "order-service";
+    private final ObjectMapper mapper;
 
-  public OrderEventFactory(ObjectMapper mapper) {
-    this.mapper = mapper;
-  }
+    public OrderEventFactory(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
 
-  public IntegrationEventDto build(EventTypeEnum eventTypeEnum, OrderEntity orderEntity, String previousEventId, Object payload) {
-    String eventId = UUID.randomUUID().toString();
-    String aggregateId = orderEntity.getId().toString();
-    String correlationId = orderEntity.getCorrelationId();
-    JsonNode payloadNode = this.mapper.valueToTree(payload);
+    public IntegrationEventDto build(EventTypeEnum eventTypeEnum, OrderEntity orderEntity, String previousEventId, Object payload) {
+        String eventId = UUID.randomUUID().toString();
+        String aggregateId = orderEntity.getId().toString();
+        String correlationId = orderEntity.getCorrelationId();
+        JsonNode payloadNode = this.mapper.valueToTree(payload);
 
-    return IntegrationEventDto.builder()
-        .eventId(eventId)
-        .eventType(eventTypeEnum.getValue())
-        .eventVersion(EVENT_VERSION)
-        .aggregateId(aggregateId)
-        .correlationId(correlationId)
-        .previousEventId(previousEventId)
-        .timestamp(LocalDateTime.now())
-        .producer(PRODUCER)
-        .payload(payloadNode)
-        .build();
-  }
+        return IntegrationEventDto.builder()
+                .eventId(eventId)
+                .eventType(eventTypeEnum.getValue())
+                .eventVersion(EVENT_VERSION)
+                .aggregateId(aggregateId)
+                .correlationId(correlationId)
+                .previousEventId(previousEventId)
+                .timestamp(LocalDateTime.now())
+                .producer(PRODUCER)
+                .payload(payloadNode)
+                .build();
+    }
 
 }

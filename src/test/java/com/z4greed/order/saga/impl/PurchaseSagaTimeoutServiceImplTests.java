@@ -23,46 +23,46 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class PurchaseSagaTimeoutServiceImplTests {
-  @Mock private PurchaseSagaRepository purchaseSagaRepository;
-  @Mock private PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
-  @InjectMocks private PurchaseSagaTimeoutServiceImpl timeoutService;
+    @Mock private PurchaseSagaRepository purchaseSagaRepository;
+    @Mock private PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
+    @InjectMocks private PurchaseSagaTimeoutServiceImpl timeoutService;
 
-  @Test
-  void shouldMarkStaleSagaAsTimedOutWithoutChangingRecoverableOrderData() {
-    LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
-    OrderEntity orderEntity = OrderEntity.builder()
-        .id(10L)
-        .status(OrderStatusEnum.PAYMENT_PENDING)
-        .correlationId("purchase-10")
-        .paymentToken("temporary-token")
-        .build();
-    PurchaseSagaEntity sagaEntity = PurchaseSagaEntity.builder()
-        .id(20L)
-        .order(orderEntity)
-        .status(SagaStatusEnum.IN_PROGRESS)
-        .currentStep(EventTypeEnum.STOCK_RESERVED.getValue())
-        .lastEventId("stock-reserved-event-id")
-        .build();
+    @Test
+    void shouldMarkStaleSagaAsTimedOutWithoutChangingRecoverableOrderData() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+        OrderEntity orderEntity = OrderEntity.builder()
+                .id(10L)
+                .status(OrderStatusEnum.PAYMENT_PENDING)
+                .correlationId("purchase-10")
+                .paymentToken("temporary-token")
+                .build();
+        PurchaseSagaEntity sagaEntity = PurchaseSagaEntity.builder()
+                .id(20L)
+                .order(orderEntity)
+                .status(SagaStatusEnum.IN_PROGRESS)
+                .currentStep(EventTypeEnum.STOCK_RESERVED.getValue())
+                .lastEventId("stock-reserved-event-id")
+                .build();
 
-    when(this.purchaseSagaRepository.findStaleForUpdate(cutoff, 100)).thenReturn(List.of(sagaEntity));
+        when(this.purchaseSagaRepository.findStaleForUpdate(cutoff, 100)).thenReturn(List.of(sagaEntity));
 
-    int result = this.timeoutService.timeoutStaleSagas(cutoff, 100);
+        int result = this.timeoutService.timeoutStaleSagas(cutoff, 100);
 
-    assertThat(result).isEqualTo(1);
-    assertThat(sagaEntity.getStatus()).isEqualTo(SagaStatusEnum.TIMED_OUT);
-    assertThat(sagaEntity.getCurrentStep()).isEqualTo(EventTypeEnum.STOCK_RESERVED.getValue());
-    assertThat(sagaEntity.getLastEventId()).isEqualTo("stock-reserved-event-id");
-    assertThat(sagaEntity.getErrorMessage()).contains(EventTypeEnum.STOCK_RESERVED.getValue());
-    assertThat(sagaEntity.getTimedOutAt()).isNotNull();
-    assertThat(orderEntity.getStatus()).isEqualTo(OrderStatusEnum.PAYMENT_PENDING);
-    assertThat(orderEntity.getPaymentToken()).isEqualTo("temporary-token");
+        assertThat(result).isEqualTo(1);
+        assertThat(sagaEntity.getStatus()).isEqualTo(SagaStatusEnum.TIMED_OUT);
+        assertThat(sagaEntity.getCurrentStep()).isEqualTo(EventTypeEnum.STOCK_RESERVED.getValue());
+        assertThat(sagaEntity.getLastEventId()).isEqualTo("stock-reserved-event-id");
+        assertThat(sagaEntity.getErrorMessage()).contains(EventTypeEnum.STOCK_RESERVED.getValue());
+        assertThat(sagaEntity.getTimedOutAt()).isNotNull();
+        assertThat(orderEntity.getStatus()).isEqualTo(OrderStatusEnum.PAYMENT_PENDING);
+        assertThat(orderEntity.getPaymentToken()).isEqualTo("temporary-token");
 
-    ArgumentCaptor<PurchaseSagaHistoryEntity> historyCaptor = ArgumentCaptor.forClass(PurchaseSagaHistoryEntity.class);
-    verify(this.purchaseSagaHistoryRepository).save(historyCaptor.capture());
-    PurchaseSagaHistoryEntity historyEntity = historyCaptor.getValue();
-    assertThat(historyEntity.getSagaStatus()).isEqualTo(SagaStatusEnum.TIMED_OUT);
-    assertThat(historyEntity.getEventType()).isEqualTo(EventTypeEnum.SAGA_TIMED_OUT);
-    assertThat(historyEntity.getOrderStatus()).isEqualTo(OrderStatusEnum.PAYMENT_PENDING);
-    assertThat(historyEntity.getEventId()).startsWith("saga-timeout-");
-  }
+        ArgumentCaptor<PurchaseSagaHistoryEntity> historyCaptor = ArgumentCaptor.forClass(PurchaseSagaHistoryEntity.class);
+        verify(this.purchaseSagaHistoryRepository).save(historyCaptor.capture());
+        PurchaseSagaHistoryEntity historyEntity = historyCaptor.getValue();
+        assertThat(historyEntity.getSagaStatus()).isEqualTo(SagaStatusEnum.TIMED_OUT);
+        assertThat(historyEntity.getEventType()).isEqualTo(EventTypeEnum.SAGA_TIMED_OUT);
+        assertThat(historyEntity.getOrderStatus()).isEqualTo(OrderStatusEnum.PAYMENT_PENDING);
+        assertThat(historyEntity.getEventId()).startsWith("saga-timeout-");
+    }
 }

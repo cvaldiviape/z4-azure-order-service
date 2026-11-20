@@ -12,12 +12,12 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class InboxEventEntity {
-  @Id private String eventId;
-  private String eventType;
-  private String aggregateId;
-  private String correlationId;
-  private String previousEventId;
-  private String producer;
-  private String sourceTopic;
-  private LocalDateTime processedAt;
+    @Id private String eventId;
+    private String eventType;
+    private String aggregateId;
+    private String correlationId;
+    private String previousEventId;
+    private String producer;
+    private String sourceTopic;
+    private LocalDateTime processedAt;
 }

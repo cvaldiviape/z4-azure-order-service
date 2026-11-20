@@ -17,65 +17,65 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class OutboxEventServiceImpl implements OutboxEventService {
-  private final OutboxEventRepository outboxEventRepository;
-  private final ObjectMapper mapper;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper mapper;
 
-  public OutboxEventServiceImpl(OutboxEventRepository outboxEventRepository, ObjectMapper mapper) {
-    this.outboxEventRepository = outboxEventRepository;
-    this.mapper = mapper;
-  }
-
-  @Override @Transactional
-  public void enqueue(String topic, IntegrationEventDto event) {
-    String payload = this.serialize(event);
-
-    OutboxEventEntity outboxEventEntity = OutboxEventEntity.builder()
-            .eventId(event.eventId())
-            .aggregateId(event.aggregateId())
-            .correlationId(event.correlationId())
-            .eventType(event.eventType())
-            .topic(topic)
-            .eventKey(event.aggregateId())
-            .payload(payload)
-            .status(OutboxStatusEnum.PENDING)
-            .attempts(0).createdAt(LocalDateTime.now())
-            .build();
-
-    this.outboxEventRepository.save(outboxEventEntity);
-  }
-
-  private String serialize(IntegrationEventDto event) {
-    try { return this.mapper.writeValueAsString(event); }
-    catch (Exception exception) {
-      throw new CustomNonRetryableKafkaException(ErrorCodeEnum.OUTBOX_SERIALIZATION_FAILED, exception);
+    public OutboxEventServiceImpl(OutboxEventRepository outboxEventRepository, ObjectMapper mapper) {
+        this.outboxEventRepository = outboxEventRepository;
+        this.mapper = mapper;
     }
-  }
 
-  @Override @Transactional(readOnly = true)
-  public List<OutboxEventEntity> findPending(int batchSize) {
-    PageRequest pageable = PageRequest.of(0, batchSize);
-    return this.outboxEventRepository.findByStatusOrderByCreatedAtAsc(OutboxStatusEnum.PENDING, pageable);
-  }
+    @Override @Transactional
+    public void enqueue(String topic, IntegrationEventDto event) {
+        String payload = this.serialize(event);
 
-  @Override @Transactional
-  public void markAsPublished(String eventId) {
-    Optional<OutboxEventEntity> outboxEventEntity = this.outboxEventRepository.findById(eventId);
+        OutboxEventEntity outboxEventEntity = OutboxEventEntity.builder()
+                        .eventId(event.eventId())
+                        .aggregateId(event.aggregateId())
+                        .correlationId(event.correlationId())
+                        .eventType(event.eventType())
+                        .topic(topic)
+                        .eventKey(event.aggregateId())
+                        .payload(payload)
+                        .status(OutboxStatusEnum.PENDING)
+                        .attempts(0).createdAt(LocalDateTime.now())
+                        .build();
 
-    outboxEventEntity.ifPresent(event -> {
-      event.setStatus(OutboxStatusEnum.PUBLISHED);
-      event.setPublishedAt(LocalDateTime.now());
-      event.setLastError(null);
-    });
-  }
+        this.outboxEventRepository.save(outboxEventEntity);
+    }
 
-  @Override @Transactional
-  public void registerFailedAttempt(String eventId, String errorMessage) {
-    Optional<OutboxEventEntity> outboxEventEntity = this.outboxEventRepository.findById(eventId);
+    private String serialize(IntegrationEventDto event) {
+        try { return this.mapper.writeValueAsString(event); }
+        catch (Exception exception) {
+            throw new CustomNonRetryableKafkaException(ErrorCodeEnum.OUTBOX_SERIALIZATION_FAILED, exception);
+        }
+    }
 
-    outboxEventEntity.ifPresent(event -> {
-      event.setAttempts(event.getAttempts() + 1);
-      event.setLastError(errorMessage);
-    });
-  }
+    @Override @Transactional(readOnly = true)
+    public List<OutboxEventEntity> findPending(int batchSize) {
+        PageRequest pageable = PageRequest.of(0, batchSize);
+        return this.outboxEventRepository.findByStatusOrderByCreatedAtAsc(OutboxStatusEnum.PENDING, pageable);
+    }
+
+    @Override @Transactional
+    public void markAsPublished(String eventId) {
+        Optional<OutboxEventEntity> outboxEventEntity = this.outboxEventRepository.findById(eventId);
+
+        outboxEventEntity.ifPresent(event -> {
+            event.setStatus(OutboxStatusEnum.PUBLISHED);
+            event.setPublishedAt(LocalDateTime.now());
+            event.setLastError(null);
+        });
+    }
+
+    @Override @Transactional
+    public void registerFailedAttempt(String eventId, String errorMessage) {
+        Optional<OutboxEventEntity> outboxEventEntity = this.outboxEventRepository.findById(eventId);
+
+        outboxEventEntity.ifPresent(event -> {
+            event.setAttempts(event.getAttempts() + 1);
+            event.setLastError(errorMessage);
+        });
+    }
 
 }

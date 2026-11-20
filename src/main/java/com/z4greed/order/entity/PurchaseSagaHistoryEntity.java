@@ -15,26 +15,26 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PurchaseSagaHistoryEntity {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "purchase_saga_id", nullable = false)
-  private PurchaseSagaEntity purchaseSaga;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "purchase_saga_id", nullable = false)
+    private PurchaseSagaEntity purchaseSaga;
 
-  private Long orderId;
+    private Long orderId;
 
-  @Enumerated(EnumType.STRING)
-  private OrderStatusEnum orderStatus;
+    @Enumerated(EnumType.STRING)
+    private OrderStatusEnum orderStatus;
 
-  @Enumerated(EnumType.STRING)
-  private SagaStatusEnum sagaStatus;
+    @Enumerated(EnumType.STRING)
+    private SagaStatusEnum sagaStatus;
 
-  @Enumerated(EnumType.STRING)
-  private EventTypeEnum eventType;
+    @Enumerated(EnumType.STRING)
+    private EventTypeEnum eventType;
 
-  private String eventId;
-  private String errorMessage;
-  private LocalDateTime createdAt;
+    private String eventId;
+    private String errorMessage;
+    private LocalDateTime createdAt;
 }

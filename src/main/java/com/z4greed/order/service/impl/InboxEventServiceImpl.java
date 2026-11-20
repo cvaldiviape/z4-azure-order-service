@@ -10,21 +10,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class InboxEventServiceImpl implements InboxEventService {
-  private final InboxEventRepository inboxEventRepository;
-  private final InboxEventMapper inboxEventMapper;
+    private final InboxEventRepository inboxEventRepository;
+    private final InboxEventMapper inboxEventMapper;
 
-  public InboxEventServiceImpl(InboxEventRepository inboxEventRepository, InboxEventMapper inboxEventMapper) {
-    this.inboxEventRepository = inboxEventRepository;
-    this.inboxEventMapper = inboxEventMapper;
-  }
+    public InboxEventServiceImpl(InboxEventRepository inboxEventRepository, InboxEventMapper inboxEventMapper) {
+        this.inboxEventRepository = inboxEventRepository;
+        this.inboxEventMapper = inboxEventMapper;
+    }
 
-  @Override @Transactional(readOnly = true)
-  public boolean wasAlreadyProcessed(String eventId) { return this.inboxEventRepository.existsById(eventId); }
+    @Override @Transactional(readOnly = true)
+    public boolean wasAlreadyProcessed(String eventId) { return this.inboxEventRepository.existsById(eventId); }
 
-  @Override @Transactional
-  public void register(IntegrationEventDto event, String sourceTopic) {
-    InboxEventEntity inboxEvent = this.inboxEventMapper.toEntity(event, sourceTopic);
-    this.inboxEventRepository.save(inboxEvent);
-  }
+    @Override @Transactional
+    public void register(IntegrationEventDto event, String sourceTopic) {
+        InboxEventEntity inboxEvent = this.inboxEventMapper.toEntity(event, sourceTopic);
+        this.inboxEventRepository.save(inboxEvent);
+    }
 
 }

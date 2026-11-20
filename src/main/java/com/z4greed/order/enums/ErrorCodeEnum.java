@@ -7,11 +7,11 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCodeEnum {
-  VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Request validation failed"),
-  ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Order not found"),
-  ORDER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Order access denied"),
-  INVALID_EVENT(HttpStatus.BAD_REQUEST, "Invalid event"),
-  OUTBOX_SERIALIZATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Outbox event serialization failed");
-  private final HttpStatus httpStatus;
-  private final String message;
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Request validation failed"),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Order not found"),
+    ORDER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Order access denied"),
+    INVALID_EVENT(HttpStatus.BAD_REQUEST, "Invalid event"),
+    OUTBOX_SERIALIZATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Outbox event serialization failed");
+    private final HttpStatus httpStatus;
+    private final String message;
 }

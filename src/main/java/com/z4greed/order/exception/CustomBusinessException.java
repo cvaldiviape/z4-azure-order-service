@@ -5,10 +5,10 @@ import lombok.Getter;
 
 @Getter
 public class CustomBusinessException extends RuntimeException {
-  private final ErrorCodeEnum errorCode;
+    private final ErrorCodeEnum errorCode;
 
-  public CustomBusinessException(ErrorCodeEnum errorCode) {
-    super(errorCode.getMessage());
-    this.errorCode = errorCode;
-  }
+    public CustomBusinessException(ErrorCodeEnum errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
 }

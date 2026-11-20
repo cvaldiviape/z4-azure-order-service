@@ -15,40 +15,40 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StockReleasedEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
-  private final PurchaseSagaStateManager purchaseSagaStateManager;
-  private final OrderEventFactory orderEventFactory;
-  private final OutboxEventService outboxEventService;
+    private final PurchaseSagaStateManager purchaseSagaStateManager;
+    private final OrderEventFactory orderEventFactory;
+    private final OutboxEventService outboxEventService;
 
-  public StockReleasedEventStrategy(
-      PurchaseSagaStateManager purchaseSagaStateManager,
-      OrderEventFactory orderEventFactory,
-      OutboxEventService outboxEventService
-  ) {
-    this.purchaseSagaStateManager = purchaseSagaStateManager;
-    this.orderEventFactory = orderEventFactory;
-    this.outboxEventService = outboxEventService;
-  }
+    public StockReleasedEventStrategy(
+            PurchaseSagaStateManager purchaseSagaStateManager,
+            OrderEventFactory orderEventFactory,
+            OutboxEventService outboxEventService
+    ) {
+        this.purchaseSagaStateManager = purchaseSagaStateManager;
+        this.orderEventFactory = orderEventFactory;
+        this.outboxEventService = outboxEventService;
+    }
 
-  @Override
-  public EventTypeEnum getEventType() {
-    return EventTypeEnum.STOCK_RELEASED;
-  }
+    @Override
+    public EventTypeEnum getEventType() {
+        return EventTypeEnum.STOCK_RELEASED;
+    }
 
-  @Override
-  public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
-    String CANCELLATION_REASON = "Payment failed";
+    @Override
+    public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
+        String CANCELLATION_REASON = "Payment failed";
 
-    this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED, EventTypeEnum.ORDER_CANCELLED, CANCELLATION_REASON);
+        this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED, EventTypeEnum.ORDER_CANCELLED, CANCELLATION_REASON);
 
-    OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
-    String previousEventId = purchaseSagaContextDto.event().eventId();
-    Map<String, Object> mapPayload = Map.of(
-            "reason", CANCELLATION_REASON
-    );
+        OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
+        String previousEventId = purchaseSagaContextDto.event().eventId();
+        Map<String, Object> mapPayload = Map.of(
+                        "reason", CANCELLATION_REASON
+        );
 
-    IntegrationEventDto orderCancelledEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CANCELLED, orderEntity, previousEventId, mapPayload);
+        IntegrationEventDto orderCancelledEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CANCELLED, orderEntity, previousEventId, mapPayload);
 
-    this.outboxEventService.enqueue("order-status-events-topic", orderCancelledEvent);
-  }
+        this.outboxEventService.enqueue("order-status-events-topic", orderCancelledEvent);
+    }
 
 }

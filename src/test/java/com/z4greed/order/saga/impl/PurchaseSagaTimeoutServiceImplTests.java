@@ -12,12 +12,13 @@ import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.repository.PurchaseSagaHistoryRepository;
 import com.z4greed.order.repository.PurchaseSagaRepository;
+import com.z4greed.order.saga.state.PurchaseSagaHistoryRecorder;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -25,7 +26,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class PurchaseSagaTimeoutServiceImplTests {
     @Mock private PurchaseSagaRepository purchaseSagaRepository;
     @Mock private PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
-    @InjectMocks private PurchaseSagaTimeoutServiceImpl timeoutService;
+    private PurchaseSagaTimeoutServiceImpl timeoutService;
+
+    @BeforeEach
+    void setUp() {
+        PurchaseSagaHistoryRecorder historyRecorder = new PurchaseSagaHistoryRecorder(this.purchaseSagaHistoryRepository);
+        this.timeoutService = new PurchaseSagaTimeoutServiceImpl(this.purchaseSagaRepository, historyRecorder);
+    }
 
     @Test
     void shouldMarkStaleSagaAsTimedOutWithoutChangingRecoverableOrderData() {

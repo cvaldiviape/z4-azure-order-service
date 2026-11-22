@@ -1,15 +1,20 @@
 package com.z4greed.order.repository;
 
 import com.z4greed.order.entity.PurchaseSagaEntity;
+import com.z4greed.order.enums.SagaStatusEnum;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PurchaseSagaRepository extends JpaRepository<PurchaseSagaEntity, Long> {
     Optional<PurchaseSagaEntity> findByOrderId(Long orderId);
+
+    Page<PurchaseSagaEntity> findByStatus(SagaStatusEnum status, Pageable pageable);
 
     @Query(value = """
             SELECT *

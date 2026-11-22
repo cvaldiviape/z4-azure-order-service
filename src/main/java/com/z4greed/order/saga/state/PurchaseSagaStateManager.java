@@ -3,33 +3,38 @@ package com.z4greed.order.saga.state;
 import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.entity.PurchaseSagaEntity;
-import com.z4greed.order.entity.PurchaseSagaHistoryEntity;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
-import com.z4greed.order.repository.PurchaseSagaHistoryRepository;
 import java.time.LocalDateTime;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Set;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 public class PurchaseSagaStateManager {
-    private final PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
+    // Estados en los que el pago ya no se volverá a intentar, por lo que el token deja de ser necesario.
+    private static final Set<SagaStatusEnum> STATUSES_WITHOUT_PENDING_PAYMENT = Set.of(
+            SagaStatusEnum.COMPLETED,
+            SagaStatusEnum.COMPENSATING,
+            SagaStatusEnum.FAILED);
 
-    public PurchaseSagaStateManager(PurchaseSagaHistoryRepository purchaseSagaHistoryRepository) {
-        this.purchaseSagaHistoryRepository = purchaseSagaHistoryRepository;
+    private final PurchaseSagaHistoryRecorder purchaseSagaHistoryRecorder;
+
+    public PurchaseSagaStateManager(PurchaseSagaHistoryRecorder purchaseSagaHistoryRecorder) {
+        this.purchaseSagaHistoryRecorder = purchaseSagaHistoryRecorder;
     }
 
+    // orderStatusEnum puede ser null cuando el paso de la Saga no cambia el estado del pedido.
     public void update(PurchaseSagaContextDto purchaseSagaContextDto, OrderStatusEnum orderStatusEnum, SagaStatusEnum sagaStatusEnum, EventTypeEnum eventTypeEnum, String errorMessage) {
         LocalDateTime updatedAt = LocalDateTime.now();
         OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
+        PurchaseSagaEntity purchaseSagaEntity = purchaseSagaContextDto.purchaseSagaEntity();
+        String eventId = purchaseSagaContextDto.event().eventId();
 
         this.updateOrder(orderEntity, orderStatusEnum, updatedAt);
-        this.updateSaga(purchaseSagaContextDto, sagaStatusEnum, eventTypeEnum, errorMessage, updatedAt);
+        this.updateSaga(purchaseSagaEntity, sagaStatusEnum, eventTypeEnum, eventId, errorMessage, updatedAt);
         this.clearPaymentTokenWhenNoLongerNeeded(orderEntity, sagaStatusEnum);
-        this.createPurchaseSagaHistory(purchaseSagaContextDto, eventTypeEnum, orderEntity, updatedAt);
-        this.logSagaState(purchaseSagaContextDto, eventTypeEnum, orderEntity);
+        this.purchaseSagaHistoryRecorder.record(purchaseSagaEntity, eventTypeEnum, eventId, updatedAt);
     }
 
     private void updateOrder(OrderEntity orderEntity, OrderStatusEnum orderStatusEnum, LocalDateTime updatedAt) {
@@ -40,55 +45,19 @@ public class PurchaseSagaStateManager {
         orderEntity.setUpdatedAt(updatedAt);
     }
 
-    private void updateSaga(PurchaseSagaContextDto purchaseSagaContextDto, SagaStatusEnum sagaStatusEnum, EventTypeEnum eventTypeEnum, String errorMessage, LocalDateTime updatedAt) {
-        PurchaseSagaEntity purchaseSagaEntity = purchaseSagaContextDto.purchaseSagaEntity();
-
+    private void updateSaga(PurchaseSagaEntity purchaseSagaEntity, SagaStatusEnum sagaStatusEnum, EventTypeEnum eventTypeEnum, String eventId, String errorMessage, LocalDateTime updatedAt) {
         purchaseSagaEntity.setStatus(sagaStatusEnum);
         purchaseSagaEntity.setCurrentStep(eventTypeEnum.getValue());
-        purchaseSagaEntity.setLastEventId(purchaseSagaContextDto.event().eventId());
+        purchaseSagaEntity.setLastEventId(eventId);
         purchaseSagaEntity.setErrorMessage(errorMessage);
         purchaseSagaEntity.setUpdatedAt(updatedAt);
         purchaseSagaEntity.setTimedOutAt(null);
     }
 
     private void clearPaymentTokenWhenNoLongerNeeded(OrderEntity orderEntity, SagaStatusEnum sagaStatusEnum) {
-        boolean isCompleted = sagaStatusEnum == SagaStatusEnum.COMPLETED;
-        boolean isCompesating = sagaStatusEnum == SagaStatusEnum.COMPENSATING;
-        boolean isFailed = sagaStatusEnum == SagaStatusEnum.FAILED;
-
-        if (isCompleted || isCompesating || isFailed) {
+        if (STATUSES_WITHOUT_PENDING_PAYMENT.contains(sagaStatusEnum)) {
             orderEntity.setPaymentToken(null);
         }
-    }
-
-    private void createPurchaseSagaHistory(PurchaseSagaContextDto purchaseSagaContextDto, EventTypeEnum eventTypeEnum, OrderEntity orderEntity, LocalDateTime updatedAt) {
-        PurchaseSagaEntity purchaseSagaEntity = purchaseSagaContextDto.purchaseSagaEntity();
-        String eventId = purchaseSagaContextDto.event().eventId();
-
-        PurchaseSagaHistoryEntity purchaseSagaHistoryEntity = PurchaseSagaHistoryEntity.builder()
-                        .purchaseSaga(purchaseSagaEntity)
-                        .orderId(orderEntity.getId())
-                        .orderStatus(orderEntity.getStatus())
-                        .sagaStatus(purchaseSagaEntity.getStatus())
-                        .eventType(eventTypeEnum)
-                        .eventId(eventId)
-                        .errorMessage(purchaseSagaEntity.getErrorMessage())
-                        .createdAt(updatedAt)
-                        .build();
-
-        this.purchaseSagaHistoryRepository.save(purchaseSagaHistoryEntity);
-    }
-
-    private void logSagaState(PurchaseSagaContextDto purchaseSagaContextDto, EventTypeEnum eventTypeEnum, OrderEntity orderEntity) {
-        PurchaseSagaEntity purchaseSagaEntity = purchaseSagaContextDto.purchaseSagaEntity();
-        String correlationId = purchaseSagaContextDto.event().correlationId();
-        String errorMessage = purchaseSagaEntity.getErrorMessage();
-
-        if (errorMessage == null) {
-            log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={}", eventTypeEnum.getValue(), purchaseSagaContextDto.event().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus());
-            return;
-        }
-        log.info("action=saga_state_changed eventType={} eventId={} correlationId={} orderId={} orderStatus={} sagaStatus={} errorMessage=\"{}\"", eventTypeEnum.getValue(), purchaseSagaContextDto.event().eventId(), correlationId, orderEntity.getId(), orderEntity.getStatus(), purchaseSagaEntity.getStatus(), errorMessage);
     }
 
 }

@@ -1,6 +1,7 @@
 package com.z4greed.order.controller;
 
 import com.z4greed.order.dto.*;
+import com.z4greed.shared.core.dto.ResponseDto;
 import com.z4greed.order.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

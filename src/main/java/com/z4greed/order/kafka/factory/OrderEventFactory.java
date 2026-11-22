@@ -1,41 +1,27 @@
 package com.z4greed.order.kafka.factory;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.enums.EventTypeEnum;
-import com.z4greed.order.kafka.event.IntegrationEventDto;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import com.z4greed.shared.kafka.event.IntegrationEventDto;
+import com.z4greed.shared.kafka.event.IntegrationEventFactory;
 import org.springframework.stereotype.Component;
 
+// Adapta la fábrica genérica de z4-shared-kafka al pedido: el aggregateId es el id del pedido
+// y el correlationId es el de la compra, para que todos sus eventos queden enlazados.
 @Component
 public class OrderEventFactory {
-    private static final Integer EVENT_VERSION = 1;
-    private static final String PRODUCER = "order-service";
-    private final ObjectMapper mapper;
+    private final IntegrationEventFactory integrationEventFactory;
 
-    public OrderEventFactory(ObjectMapper mapper) {
-        this.mapper = mapper;
+    public OrderEventFactory(IntegrationEventFactory integrationEventFactory) {
+        this.integrationEventFactory = integrationEventFactory;
     }
 
     public IntegrationEventDto build(EventTypeEnum eventTypeEnum, OrderEntity orderEntity, String previousEventId, Object payload) {
-        String eventId = UUID.randomUUID().toString();
-        String aggregateId = orderEntity.getId().toString();
-        String correlationId = orderEntity.getCorrelationId();
-        JsonNode payloadNode = this.mapper.valueToTree(payload);
-
-        return IntegrationEventDto.builder()
-                .eventId(eventId)
-                .eventType(eventTypeEnum.getValue())
-                .eventVersion(EVENT_VERSION)
-                .aggregateId(aggregateId)
-                .correlationId(correlationId)
-                .previousEventId(previousEventId)
-                .timestamp(LocalDateTime.now())
-                .producer(PRODUCER)
-                .payload(payloadNode)
-                .build();
+        return this.integrationEventFactory.create(
+                eventTypeEnum.getValue(),
+                orderEntity.getId().toString(),
+                orderEntity.getCorrelationId(),
+                previousEventId,
+                payload);
     }
-
 }

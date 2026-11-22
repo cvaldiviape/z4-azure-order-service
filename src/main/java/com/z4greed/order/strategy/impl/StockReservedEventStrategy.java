@@ -5,9 +5,10 @@ import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
+import com.z4greed.order.kafka.KafkaTopics;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
-import com.z4greed.order.kafka.event.IntegrationEventDto;
-import com.z4greed.order.service.OutboxEventService;
+import com.z4greed.shared.kafka.event.IntegrationEventDto;
+import com.z4greed.shared.kafka.outbox.OutboxEventService;
 import com.z4greed.order.strategy.EventStrategy;
 import com.z4greed.order.saga.state.PurchaseSagaStateManager;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class StockReservedEventStrategy implements EventStrategy<EventTypeEnum, 
 
         IntegrationEventDto paymentRequestedEvent = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, previousEventId, mapPayload);
 
-        this.outboxEventService.enqueue("payment-processing-requests-topic", paymentRequestedEvent);
+        this.outboxEventService.enqueue(KafkaTopics.PAYMENT_PROCESSING_REQUESTS, paymentRequestedEvent);
     }
 
 }

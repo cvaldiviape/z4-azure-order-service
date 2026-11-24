@@ -16,12 +16,19 @@ public class OrderEventFactory {
         this.integrationEventFactory = integrationEventFactory;
     }
 
+    public IntegrationEventDto build(EventTypeEnum eventTypeEnum, OrderEntity orderEntity) {
+        String eventType = eventTypeEnum.getValue();
+        String aggregateId = orderEntity.getId().toString();
+        String correlationId = orderEntity.getCorrelationId();
+
+        return this.integrationEventFactory.create(eventType, aggregateId, correlationId);
+    }
+
     public IntegrationEventDto build(EventTypeEnum eventTypeEnum, OrderEntity orderEntity, String previousEventId, Object payload) {
-        return this.integrationEventFactory.create(
-                eventTypeEnum.getValue(),
-                orderEntity.getId().toString(),
-                orderEntity.getCorrelationId(),
-                previousEventId,
-                payload);
+        String eventType = eventTypeEnum.getValue();
+        String aggregateId = orderEntity.getId().toString();
+        String correlationId = orderEntity.getCorrelationId();
+
+        return this.integrationEventFactory.create(eventType, aggregateId, correlationId, previousEventId, payload);
     }
 }

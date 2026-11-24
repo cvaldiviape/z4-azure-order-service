@@ -57,11 +57,10 @@ public class OrderServiceImpl implements OrderService {
         this.orderEventFactory = orderEventFactory;
     }
 
-    // Crear un pedido = guardarlo, iniciar su Saga y pedir a inventory-service que reserve el stock.
     @Override
     public OrderResponseDto create(Long customerId, CreateOrderRequestDto requestDto) {
         OrderEntity orderEntity = this.createOrder(customerId, requestDto);
-        IntegrationEventDto orderCreatedEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity, null, Map.of());
+        IntegrationEventDto orderCreatedEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CREATED, orderEntity);
 
         this.startPurchaseSaga(orderEntity, orderCreatedEvent);
         this.requestStockReservation(orderEntity, orderCreatedEvent, requestDto.listItems());
@@ -69,27 +68,14 @@ public class OrderServiceImpl implements OrderService {
         return this.orderMapper.toDto(orderEntity);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public OrderResponseDto get(Long orderId, Long customerId) {
-        OrderEntity orderEntity = this.findOrder(orderId);
-        this.validateOwnership(orderEntity, customerId);
-        return this.orderMapper.toDto(orderEntity);
-    }
-
     private OrderEntity createOrder(Long customerId, CreateOrderRequestDto requestDto) {
         List<ItemRequestDto> listItems = requestDto.listItems();
 
-        OrderEntity orderEntity = OrderEntity.builder()
-                .customerId(customerId)
-                .status(OrderStatusEnum.CREATED)
-                .totalAmount(this.calculateTotal(listItems))
-                .currency(CURRENCY)
-                .correlationId(CORRELATION_ID_PREFIX + UUID.randomUUID())
-                .paymentToken(requestDto.paymentToken())
-                .createdAt(LocalDateTime.now())
-                .build();
-        orderEntity.setListItems(this.buildOrderItems(listItems, orderEntity));
+        BigDecimal totalAmount = this.calculateTotal(listItems);
+        OrderEntity orderEntity = this.buildOrderEntity(customerId, requestDto, totalAmount);
+        List<OrderItemEntity> listItemsEntites = this.buildOrderItems(listItems, orderEntity);
+
+        orderEntity.setListItems(listItemsEntites);
 
         return this.orderRepository.save(orderEntity);
     }
@@ -100,16 +86,31 @@ public class OrderServiceImpl implements OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    private OrderEntity buildOrderEntity(Long customerId, CreateOrderRequestDto requestDto, BigDecimal totalAmount) {
+        return OrderEntity.builder()
+                .customerId(customerId)
+                .status(OrderStatusEnum.CREATED)
+                .totalAmount(totalAmount)
+                .currency(CURRENCY)
+                .correlationId(CORRELATION_ID_PREFIX + UUID.randomUUID())
+                .paymentToken(requestDto.paymentToken())
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
+
     private List<OrderItemEntity> buildOrderItems(List<ItemRequestDto> listItems, OrderEntity orderEntity) {
         return listItems.stream()
-                .map(itemDto -> OrderItemEntity.builder()
-                        .order(orderEntity)
-                        .productId(itemDto.productId())
-                        .productName(itemDto.productName())
-                        .unitPrice(itemDto.unitPrice())
-                        .quantity(itemDto.quantity())
-                        .subtotal(this.calculateSubtotal(itemDto))
-                        .build())
+                .map(itemDto -> {
+                    BigDecimal subtotal = this.calculateSubtotal(itemDto);
+                    return OrderItemEntity.builder()
+                            .order(orderEntity)
+                            .productId(itemDto.productId())
+                            .productName(itemDto.productName())
+                            .unitPrice(itemDto.unitPrice())
+                            .quantity(itemDto.quantity())
+                            .subtotal(subtotal)
+                            .build();
+                })
                 .toList();
     }
 
@@ -139,9 +140,18 @@ public class OrderServiceImpl implements OrderService {
                 "paymentToken", orderEntity.getPaymentToken(),
                 "items", listItems
         );
-        IntegrationEventDto reserveStockEvent = this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, orderCreatedEvent.eventId(), mapPayload);
+        String previousEventId = orderCreatedEvent.eventId();
+        IntegrationEventDto reserveStockEvent = this.orderEventFactory.build(EventTypeEnum.RESERVE_STOCK, orderEntity, previousEventId, mapPayload);
 
         this.outboxEventService.enqueue(KafkaTopics.INVENTORY_RESERVATION_REQUESTS, reserveStockEvent);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponseDto get(Long orderId, Long customerId) {
+        OrderEntity orderEntity = this.findOrder(orderId);
+        this.validateOwnership(orderEntity, customerId);
+        return this.orderMapper.toDto(orderEntity);
     }
 
     private OrderEntity findOrder(Long orderId) {

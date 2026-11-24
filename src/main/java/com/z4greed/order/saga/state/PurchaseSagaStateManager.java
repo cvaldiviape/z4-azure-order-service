@@ -3,9 +3,11 @@ package com.z4greed.order.saga.state;
 import com.z4greed.order.dto.PurchaseSagaContextDto;
 import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.entity.PurchaseSagaEntity;
+import com.z4greed.order.entity.PurchaseSagaHistoryEntity;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
+import com.z4greed.order.repository.PurchaseSagaHistoryRepository;
 import java.time.LocalDateTime;
 import java.util.Set;
 import org.springframework.stereotype.Component;
@@ -18,10 +20,10 @@ public class PurchaseSagaStateManager {
             SagaStatusEnum.COMPENSATING,
             SagaStatusEnum.FAILED);
 
-    private final PurchaseSagaHistoryRecorder purchaseSagaHistoryRecorder;
+    private final PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
 
-    public PurchaseSagaStateManager(PurchaseSagaHistoryRecorder purchaseSagaHistoryRecorder) {
-        this.purchaseSagaHistoryRecorder = purchaseSagaHistoryRecorder;
+    public PurchaseSagaStateManager(PurchaseSagaHistoryRepository purchaseSagaHistoryRepository) {
+        this.purchaseSagaHistoryRepository = purchaseSagaHistoryRepository;
     }
 
     // orderStatusEnum puede ser null cuando el paso de la Saga no cambia el estado del pedido.
@@ -34,7 +36,7 @@ public class PurchaseSagaStateManager {
         this.updateOrder(orderEntity, orderStatusEnum, updatedAt);
         this.updateSaga(purchaseSagaEntity, sagaStatusEnum, eventTypeEnum, eventId, errorMessage, updatedAt);
         this.clearPaymentTokenWhenNoLongerNeeded(orderEntity, sagaStatusEnum);
-        this.purchaseSagaHistoryRecorder.record(purchaseSagaEntity, eventTypeEnum, eventId, updatedAt);
+        this.recordHistory(purchaseSagaEntity, eventTypeEnum, eventId, updatedAt);
     }
 
     private void updateOrder(OrderEntity orderEntity, OrderStatusEnum orderStatusEnum, LocalDateTime updatedAt) {
@@ -58,6 +60,23 @@ public class PurchaseSagaStateManager {
         if (STATUSES_WITHOUT_PENDING_PAYMENT.contains(sagaStatusEnum)) {
             orderEntity.setPaymentToken(null);
         }
+    }
+
+    private void recordHistory(PurchaseSagaEntity purchaseSagaEntity, EventTypeEnum eventTypeEnum, String eventId, LocalDateTime createdAt) {
+        OrderEntity orderEntity = purchaseSagaEntity.getOrder();
+
+        PurchaseSagaHistoryEntity purchaseSagaHistoryEntity = PurchaseSagaHistoryEntity.builder()
+                .purchaseSaga(purchaseSagaEntity)
+                .orderId(orderEntity.getId())
+                .orderStatus(orderEntity.getStatus())
+                .sagaStatus(purchaseSagaEntity.getStatus())
+                .eventType(eventTypeEnum)
+                .eventId(eventId)
+                .errorMessage(purchaseSagaEntity.getErrorMessage())
+                .createdAt(createdAt)
+                .build();
+
+        this.purchaseSagaHistoryRepository.save(purchaseSagaHistoryEntity);
     }
 
 }

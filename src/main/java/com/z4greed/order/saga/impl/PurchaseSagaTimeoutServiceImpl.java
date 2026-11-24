@@ -1,11 +1,13 @@
 package com.z4greed.order.saga.impl;
 
+import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.entity.PurchaseSagaEntity;
+import com.z4greed.order.entity.PurchaseSagaHistoryEntity;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
+import com.z4greed.order.repository.PurchaseSagaHistoryRepository;
 import com.z4greed.order.repository.PurchaseSagaRepository;
 import com.z4greed.order.saga.PurchaseSagaTimeoutService;
-import com.z4greed.order.saga.state.PurchaseSagaHistoryRecorder;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -18,14 +20,14 @@ public class PurchaseSagaTimeoutServiceImpl implements PurchaseSagaTimeoutServic
     private static final String TIMEOUT_EVENT_ID_PREFIX = "saga-timeout-";
 
     private final PurchaseSagaRepository purchaseSagaRepository;
-    private final PurchaseSagaHistoryRecorder purchaseSagaHistoryRecorder;
+    private final PurchaseSagaHistoryRepository purchaseSagaHistoryRepository;
 
     public PurchaseSagaTimeoutServiceImpl(
             PurchaseSagaRepository purchaseSagaRepository,
-            PurchaseSagaHistoryRecorder purchaseSagaHistoryRecorder
+            PurchaseSagaHistoryRepository purchaseSagaHistoryRepository
     ) {
         this.purchaseSagaRepository = purchaseSagaRepository;
-        this.purchaseSagaHistoryRecorder = purchaseSagaHistoryRecorder;
+        this.purchaseSagaHistoryRepository = purchaseSagaHistoryRepository;
     }
 
     @Override
@@ -40,12 +42,30 @@ public class PurchaseSagaTimeoutServiceImpl implements PurchaseSagaTimeoutServic
     private void markAsTimedOut(PurchaseSagaEntity purchaseSagaEntity) {
         LocalDateTime timedOutAt = LocalDateTime.now();
         String timeoutEventId = TIMEOUT_EVENT_ID_PREFIX + UUID.randomUUID();
+        String errorMessage = TIMEOUT_ERROR_PREFIX + purchaseSagaEntity.getCurrentStep();
 
         purchaseSagaEntity.setStatus(SagaStatusEnum.TIMED_OUT);
-        purchaseSagaEntity.setErrorMessage(TIMEOUT_ERROR_PREFIX + purchaseSagaEntity.getCurrentStep());
+        purchaseSagaEntity.setErrorMessage(errorMessage);
         purchaseSagaEntity.setUpdatedAt(timedOutAt);
         purchaseSagaEntity.setTimedOutAt(timedOutAt);
 
-        this.purchaseSagaHistoryRecorder.record(purchaseSagaEntity, EventTypeEnum.SAGA_TIMED_OUT, timeoutEventId, timedOutAt);
+        this.recordHistory(purchaseSagaEntity, EventTypeEnum.SAGA_TIMED_OUT, timeoutEventId, timedOutAt);
+    }
+
+    private void recordHistory(PurchaseSagaEntity purchaseSagaEntity, EventTypeEnum eventTypeEnum, String eventId, LocalDateTime createdAt) {
+        OrderEntity orderEntity = purchaseSagaEntity.getOrder();
+
+        PurchaseSagaHistoryEntity purchaseSagaHistoryEntity = PurchaseSagaHistoryEntity.builder()
+                .purchaseSaga(purchaseSagaEntity)
+                .orderId(orderEntity.getId())
+                .orderStatus(orderEntity.getStatus())
+                .sagaStatus(purchaseSagaEntity.getStatus())
+                .eventType(eventTypeEnum)
+                .eventId(eventId)
+                .errorMessage(purchaseSagaEntity.getErrorMessage())
+                .createdAt(createdAt)
+                .build();
+
+        this.purchaseSagaHistoryRepository.save(purchaseSagaHistoryEntity);
     }
 }

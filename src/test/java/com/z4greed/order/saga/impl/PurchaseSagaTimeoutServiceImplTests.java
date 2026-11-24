@@ -12,7 +12,6 @@ import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
 import com.z4greed.order.repository.PurchaseSagaHistoryRepository;
 import com.z4greed.order.repository.PurchaseSagaRepository;
-import com.z4greed.order.saga.state.PurchaseSagaHistoryRecorder;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +29,7 @@ class PurchaseSagaTimeoutServiceImplTests {
 
     @BeforeEach
     void setUp() {
-        PurchaseSagaHistoryRecorder historyRecorder = new PurchaseSagaHistoryRecorder(this.purchaseSagaHistoryRepository);
-        this.timeoutService = new PurchaseSagaTimeoutServiceImpl(this.purchaseSagaRepository, historyRecorder);
+        this.timeoutService = new PurchaseSagaTimeoutServiceImpl(this.purchaseSagaRepository, this.purchaseSagaHistoryRepository);
     }
 
     @Test

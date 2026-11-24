@@ -10,7 +10,6 @@ import com.z4greed.shared.kafka.event.IntegrationEventDto;
 import com.z4greed.shared.kafka.outbox.OutboxEventService;
 import com.z4greed.order.strategy.EventStrategy;
 import com.z4greed.order.saga.state.PurchaseSagaStateManager;
-import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -37,12 +36,14 @@ public class PaymentFailedEventStrategy implements EventStrategy<EventTypeEnum, 
     @Override
     public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
         this.purchaseSagaStateManager.update(purchaseSagaContextDto, null, SagaStatusEnum.COMPENSATING, EventTypeEnum.PAYMENT_FAILED, null);
+        this.publishReleaseStock(purchaseSagaContextDto);
+    }
 
+    private void publishReleaseStock(PurchaseSagaContextDto purchaseSagaContextDto) {
         OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
         String previousEventId = purchaseSagaContextDto.event().eventId();
-        Map<String, Object> mapPayload = Map.of();
 
-        IntegrationEventDto releaseStockEvent = this.orderEventFactory.build(EventTypeEnum.RELEASE_STOCK, orderEntity, previousEventId, mapPayload);
+        IntegrationEventDto releaseStockEvent = this.orderEventFactory.build(EventTypeEnum.RELEASE_STOCK, orderEntity, previousEventId);
 
         this.outboxEventService.enqueue(KafkaTopics.INVENTORY_RESERVATION_REQUESTS, releaseStockEvent);
     }

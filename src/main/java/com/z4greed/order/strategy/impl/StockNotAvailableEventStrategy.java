@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StockNotAvailableEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
+    private static final String CANCELLATION_REASON = "Stock not available";
+
     private final PurchaseSagaStateManager purchaseSagaStateManager;
     private final OrderEventFactory orderEventFactory;
     private final OutboxEventService outboxEventService;
@@ -37,14 +39,15 @@ public class StockNotAvailableEventStrategy implements EventStrategy<EventTypeEn
 
     @Override
     public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
-        String CANCELLATION_REASON = "Stock not available";
-
         this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED, EventTypeEnum.ORDER_CANCELLED, CANCELLATION_REASON);
+        this.publishOrderCancelled(purchaseSagaContextDto);
+    }
 
+    private void publishOrderCancelled(PurchaseSagaContextDto purchaseSagaContextDto) {
         OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
         String previousEventId = purchaseSagaContextDto.event().eventId();
         Map<String, Object> mapPayload = Map.of(
-                        "reason", CANCELLATION_REASON
+                "reason", CANCELLATION_REASON
         );
 
         IntegrationEventDto orderCancelledEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CANCELLED, orderEntity, previousEventId, mapPayload);

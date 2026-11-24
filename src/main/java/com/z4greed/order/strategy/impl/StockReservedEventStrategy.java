@@ -38,14 +38,17 @@ public class StockReservedEventStrategy implements EventStrategy<EventTypeEnum, 
     @Override
     public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
         this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.PAYMENT_PENDING, SagaStatusEnum.IN_PROGRESS, EventTypeEnum.STOCK_RESERVED, null);
+        this.publishPaymentRequested(purchaseSagaContextDto);
+    }
 
+    private void publishPaymentRequested(PurchaseSagaContextDto purchaseSagaContextDto) {
         OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
         String previousEventId = purchaseSagaContextDto.event().eventId();
-        Map<String, Object> mapPayload =  Map.of(
-                        "customerId", orderEntity.getCustomerId(),
-                        "amount", orderEntity.getTotalAmount(),
-                        "currency", orderEntity.getCurrency(),
-                        "paymentToken", orderEntity.getPaymentToken()
+        Map<String, Object> mapPayload = Map.of(
+                "customerId", orderEntity.getCustomerId(),
+                "amount", orderEntity.getTotalAmount(),
+                "currency", orderEntity.getCurrency(),
+                "paymentToken", orderEntity.getPaymentToken()
         );
 
         IntegrationEventDto paymentRequestedEvent = this.orderEventFactory.build(EventTypeEnum.PAYMENT_REQUESTED, orderEntity, previousEventId, mapPayload);

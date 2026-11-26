@@ -16,23 +16,23 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderEntity {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  private Long customerId;
+    private Long customerId;
 
-  @Enumerated(EnumType.STRING)
-  private OrderStatusEnum status;
+    @Enumerated(EnumType.STRING)
+    private OrderStatusEnum status;
 
-  private BigDecimal totalAmount;
-  private String currency;
-  private String correlationId;
-  private String paymentToken;
-  private LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
+    private BigDecimal totalAmount;
+    private String currency;
+    private String correlationId;
+    private String paymentToken;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-  @Builder.Default
-  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-  private List<OrderItemEntity> listItems = new ArrayList<>();
+    @Builder.Default
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<OrderItemEntity> listItems = new ArrayList<>();
 }

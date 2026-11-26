@@ -5,9 +5,10 @@ import com.z4greed.order.entity.OrderEntity;
 import com.z4greed.order.enums.EventTypeEnum;
 import com.z4greed.order.enums.OrderStatusEnum;
 import com.z4greed.order.enums.SagaStatusEnum;
+import com.z4greed.order.kafka.KafkaTopics;
 import com.z4greed.order.kafka.factory.OrderEventFactory;
-import com.z4greed.order.kafka.event.IntegrationEventDto;
-import com.z4greed.order.service.OutboxEventService;
+import com.z4greed.shared.kafka.event.IntegrationEventDto;
+import com.z4greed.shared.kafka.outbox.OutboxEventService;
 import com.z4greed.order.strategy.EventStrategy;
 import com.z4greed.order.saga.state.PurchaseSagaStateManager;
 import java.util.Map;
@@ -15,40 +16,43 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StockNotAvailableEventStrategy implements EventStrategy<EventTypeEnum, PurchaseSagaContextDto> {
-  private final PurchaseSagaStateManager purchaseSagaStateManager;
-  private final OrderEventFactory orderEventFactory;
-  private final OutboxEventService outboxEventService;
+    private static final String CANCELLATION_REASON = "Stock not available";
 
-  public StockNotAvailableEventStrategy(
-      PurchaseSagaStateManager purchaseSagaStateManager,
-      OrderEventFactory orderEventFactory,
-      OutboxEventService outboxEventService
-  ) {
-    this.purchaseSagaStateManager = purchaseSagaStateManager;
-    this.orderEventFactory = orderEventFactory;
-    this.outboxEventService = outboxEventService;
-  }
+    private final PurchaseSagaStateManager purchaseSagaStateManager;
+    private final OrderEventFactory orderEventFactory;
+    private final OutboxEventService outboxEventService;
 
-  @Override
-  public EventTypeEnum getEventType() {
-    return EventTypeEnum.STOCK_NOT_AVAILABLE;
-  }
+    public StockNotAvailableEventStrategy(
+            PurchaseSagaStateManager purchaseSagaStateManager,
+            OrderEventFactory orderEventFactory,
+            OutboxEventService outboxEventService
+    ) {
+        this.purchaseSagaStateManager = purchaseSagaStateManager;
+        this.orderEventFactory = orderEventFactory;
+        this.outboxEventService = outboxEventService;
+    }
 
-  @Override
-  public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
-    String CANCELLATION_REASON = "Stock not available";
+    @Override
+    public EventTypeEnum getEventType() {
+        return EventTypeEnum.STOCK_NOT_AVAILABLE;
+    }
 
-    this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED, EventTypeEnum.ORDER_CANCELLED, CANCELLATION_REASON);
+    @Override
+    public void execute(PurchaseSagaContextDto purchaseSagaContextDto) {
+        this.purchaseSagaStateManager.update(purchaseSagaContextDto, OrderStatusEnum.CANCELLED, SagaStatusEnum.COMPLETED, EventTypeEnum.ORDER_CANCELLED, CANCELLATION_REASON);
+        this.publishOrderCancelled(purchaseSagaContextDto);
+    }
 
-    OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
-    String previousEventId = purchaseSagaContextDto.event().eventId();
-    Map<String, Object> mapPayload = Map.of(
-            "reason", CANCELLATION_REASON
-    );
+    private void publishOrderCancelled(PurchaseSagaContextDto purchaseSagaContextDto) {
+        OrderEntity orderEntity = purchaseSagaContextDto.orderEntity();
+        String previousEventId = purchaseSagaContextDto.event().eventId();
+        Map<String, Object> mapPayload = Map.of(
+                "reason", CANCELLATION_REASON
+        );
 
-    IntegrationEventDto orderCancelledEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CANCELLED, orderEntity, previousEventId, mapPayload);
+        IntegrationEventDto orderCancelledEvent = this.orderEventFactory.build(EventTypeEnum.ORDER_CANCELLED, orderEntity, previousEventId, mapPayload);
 
-    this.outboxEventService.enqueue("order-status-events-topic", orderCancelledEvent);
-  }
+        this.outboxEventService.enqueue(KafkaTopics.ORDER_STATUS_EVENTS, orderCancelledEvent);
+    }
 
 }

@@ -8,29 +8,29 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum EventTypeEnum {
-  ORDER_CREATED("ORDER_CREATED"),
-  RESERVE_STOCK("RESERVE_STOCK"),
-  STOCK_RESERVED("STOCK_RESERVED"),
-  STOCK_NOT_AVAILABLE("STOCK_NOT_AVAILABLE"),
-  STOCK_RELEASED("STOCK_RELEASED"),
-  PAYMENT_REQUESTED("PAYMENT_REQUESTED"),
-  PAYMENT_APPROVED("PAYMENT_APPROVED"),
-  PAYMENT_FAILED("PAYMENT_FAILED"),
-  RELEASE_STOCK("RELEASE_STOCK"),
-  ORDER_CANCELLED("ORDER_CANCELLED"),
-  SAGA_TIMED_OUT("SAGA_TIMED_OUT");
+    ORDER_CREATED("ORDER_CREATED"),
+    RESERVE_STOCK("RESERVE_STOCK"),
+    STOCK_RESERVED("STOCK_RESERVED"),
+    STOCK_NOT_AVAILABLE("STOCK_NOT_AVAILABLE"),
+    STOCK_RELEASED("STOCK_RELEASED"),
+    PAYMENT_REQUESTED("PAYMENT_REQUESTED"),
+    PAYMENT_APPROVED("PAYMENT_APPROVED"),
+    PAYMENT_FAILED("PAYMENT_FAILED"),
+    RELEASE_STOCK("RELEASE_STOCK"),
+    ORDER_CANCELLED("ORDER_CANCELLED"),
+    SAGA_TIMED_OUT("SAGA_TIMED_OUT");
 
-  private final String value;
+    private final String value;
 
-  public static Optional<EventTypeEnum> fromValue(String value) {
-    EventTypeEnum[] listEnumValues = values();
+    public static Optional<EventTypeEnum> fromValue(String value) {
+        EventTypeEnum[] listEnumValues = values();
 
-    return Arrays.stream(listEnumValues)
-            .filter(eventTypeEnum -> {
-              String valueEvent = eventTypeEnum.value;
-              return valueEvent.equals(value);
-            })
-            .findFirst();
-  }
+        return Arrays.stream(listEnumValues)
+                        .filter(eventTypeEnum -> {
+                            String valueEvent = eventTypeEnum.value;
+                            return valueEvent.equals(value);
+                        })
+                        .findFirst();
+    }
 
 }

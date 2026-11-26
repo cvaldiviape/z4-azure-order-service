@@ -25,18 +25,23 @@ spring:
 
 app:
   kafka:
+    dead-letter-topics: inventory-reservation-results-topic, payment-processing-results-topic # Topics que consume; z4-shared-kafka crea su <topic>-dlt.
     retry:
       interval-milliseconds: ${KAFKA_RETRY_INTERVAL_MILLISECONDS:2000} # Espera 2 segundos entre intentos.
       max-attempts: ${KAFKA_RETRY_MAX_ATTEMPTS:3} # Incluye el intento inicial: 1 inicial + 2 reintentos.
-  outbox:
-    batch-size: ${OUTBOX_BATCH_SIZE:100}
-    poll-interval-milliseconds: ${OUTBOX_POLL_INTERVAL_MILLISECONDS:1000}
-    initial-delay-milliseconds: ${OUTBOX_INITIAL_DELAY_MILLISECONDS:1000}
-    send-timeout-milliseconds: ${OUTBOX_SEND_TIMEOUT_MILLISECONDS:10000}
+    outbox: # Patrón Outbox de z4-shared-kafka.
+      batch-size: ${OUTBOX_BATCH_SIZE:100}
+      poll-interval-milliseconds: ${OUTBOX_POLL_INTERVAL_MILLISECONDS:1000}
+      initial-delay-milliseconds: ${OUTBOX_INITIAL_DELAY_MILLISECONDS:1000}
+      send-timeout-milliseconds: ${OUTBOX_SEND_TIMEOUT_MILLISECONDS:10000}
   saga:
     timeout-milliseconds: ${SAGA_TIMEOUT_MILLISECONDS:300000}
     timeout-batch-size: ${SAGA_TIMEOUT_BATCH_SIZE:100}
     timeout-poll-interval-milliseconds: ${SAGA_TIMEOUT_POLL_INTERVAL_MILLISECONDS:30000}
     timeout-initial-delay-milliseconds: ${SAGA_TIMEOUT_INITIAL_DELAY_MILLISECONDS:30000}
+  security: # Reglas de acceso que aplica z4-shared-security.
+    public-paths: /actuator/health # Sin token.
+    admin-paths: /ops/** # Solo token con rol ADMIN; el resto exige cualquier token válido.
+    cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:5173} # Orígenes de los fronts en desarrollo.
   jwt:
     secret: ${JWT_SECRET:change-me-change-me-change-me-32-bytes}

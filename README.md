@@ -4,12 +4,12 @@ Servicio responsable de crear pedidos y orquestar la Saga de compra.
 
 ## Configuración local
 
-| Propiedad | Valor predeterminado |
-|---|---|
-| Puerto HTTP | `8082` |
-| PostgreSQL | `localhost:5434/orders_db` |
-| Kafka | `localhost:9092` |
-| Consumer group ID | `purchase-saga-consumer-group-id` |
+| #   | Propiedad         | Valor predeterminado              |
+|-----|-------------------|-----------------------------------|
+| 1   | Puerto HTTP       | `8082`                            |
+| 2   | PostgreSQL        | `localhost:5434/orders_db`        |
+| 3   | Kafka             | `localhost:9092`                  |
+| 4   | Consumer group ID | `purchase-saga-consumer-group-id` |
 
 `localhost:5434` corresponde al puerto publicado por `orders-postgres`. Dentro del contenedor PostgreSQL continúa utilizando `5432`.
 

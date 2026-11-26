@@ -13,24 +13,24 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PurchaseSagaEntity {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @OneToOne
-  @JoinColumn(name = "order_id")
-  private OrderEntity order;
+    @OneToOne
+    @JoinColumn(name = "order_id")
+    private OrderEntity order;
 
-  @Enumerated(EnumType.STRING)
-  private SagaStatusEnum status;
+    @Enumerated(EnumType.STRING)
+    private SagaStatusEnum status;
 
-  private String currentStep;
-  private String lastEventId;
-  private String errorMessage;
-  private LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
-  private LocalDateTime timedOutAt;
+    private String currentStep;
+    private String lastEventId;
+    private String errorMessage;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime timedOutAt;
 
-  @Version
-  private Long version;
+    @Version
+    private Long version;
 }

@@ -12,17 +12,17 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderItemEntity {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @ManyToOne
-  @JoinColumn(name = "order_id")
-  private OrderEntity order;
+    @ManyToOne
+    @JoinColumn(name = "order_id")
+    private OrderEntity order;
 
-  private Long productId;
-  private String productName;
-  private BigDecimal unitPrice;
-  private Integer quantity;
-  private BigDecimal subtotal;
+    private Long productId;
+    private String productName;
+    private BigDecimal unitPrice;
+    private Integer quantity;
+    private BigDecimal subtotal;
 }

@@ -9,21 +9,21 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentEventStrategyRegistry implements EventStrategyRegistry<EventTypeEnum, PurchaseSagaContextDto> {
-  private final Map<EventTypeEnum, EventStrategy<EventTypeEnum, PurchaseSagaContextDto>> mapEventStrategies;
+    private final Map<EventTypeEnum, EventStrategy<EventTypeEnum, PurchaseSagaContextDto>> mapEventStrategies;
 
-  public PaymentEventStrategyRegistry(
-      PaymentApprovedEventStrategy paymentApprovedEventStrategy,
-      PaymentFailedEventStrategy paymentFailedEventStrategy
-  ) {
-    this.mapEventStrategies = Map.of(
-        EventTypeEnum.PAYMENT_APPROVED, paymentApprovedEventStrategy,
-        EventTypeEnum.PAYMENT_FAILED, paymentFailedEventStrategy
-    );
-  }
+    public PaymentEventStrategyRegistry(
+            PaymentApprovedEventStrategy paymentApprovedEventStrategy,
+            PaymentFailedEventStrategy paymentFailedEventStrategy
+    ) {
+        this.mapEventStrategies = Map.of(
+                EventTypeEnum.PAYMENT_APPROVED, paymentApprovedEventStrategy,
+                EventTypeEnum.PAYMENT_FAILED, paymentFailedEventStrategy
+        );
+    }
 
-  @Override
-  public EventStrategy<EventTypeEnum, PurchaseSagaContextDto> find(EventTypeEnum eventTypeEnum) {
-    return this.mapEventStrategies.get(eventTypeEnum);
-  }
+    @Override
+    public EventStrategy<EventTypeEnum, PurchaseSagaContextDto> find(EventTypeEnum eventTypeEnum) {
+        return this.mapEventStrategies.get(eventTypeEnum);
+    }
 
 }
